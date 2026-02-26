@@ -213,11 +213,15 @@ export default function EmployeesPage() {
             if (editingId)
                 await api.put(`/api/admin/employees/${editingId}`, dataToSave);
             else await api.post("/api/admin/employees", dataToSave);
+            
+            // Reload employees first, then close modal
+            await loadEmployees();
+            showToast("Empleado guardado", "success");
+            
+            // Close modal and reset form after data is loaded
             setShowModal(false);
             setEditingId(null);
             setEmpForm(EMPTY_EMP);
-            await loadEmployees();
-            showToast("Empleado guardado", "success");
         } catch (err) {
             const msg = err.response?.data?.errors || [
                 err.response?.data?.error || "No se pudo guardar",
