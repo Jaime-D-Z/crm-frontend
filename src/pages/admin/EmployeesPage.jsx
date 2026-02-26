@@ -219,6 +219,20 @@ export default function EmployeesPage() {
             } else {
                 console.log('➕ Creando nuevo empleado');
                 response = await api.post("/api/admin/employees", dataToSave);
+                
+                // Manejar la advertencia de duplicado que retorna ok: true pero no crea el usuario
+                if (response.data.warning === 'duplicate_warning') {
+                    if (response.data.severity === 'high') {
+                        showToast(response.data.message, "error");
+                        return; // Bloqueado, no crear
+                    } else {
+                        const confirm = window.confirm(response.data.message + "\n\n¿Desea crear el empleado de todos modos?");
+                        if (!confirm) return;
+                        // Intentar otra vez con confirmación
+                        dataToSave.duplicateConfirmed = true;
+                        response = await api.post("/api/admin/employees", dataToSave);
+                    }
+                }
             }
             
             console.log('✅ Respuesta del servidor:', response.data);
