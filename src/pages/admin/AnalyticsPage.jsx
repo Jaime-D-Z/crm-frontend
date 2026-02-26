@@ -218,15 +218,19 @@ export default function AnalyticsPage() {
                                     </div>
                                 </div>
                                 <div style={{ width: '100%', marginTop: '24px' }}>
-                                    {devices.map((d, i) => (
-                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors[i % colors.length] }}></div>
-                                                <span style={{ fontSize: '13px', textTransform: 'capitalize', color: 'var(--text)' }}>{d.device_type}</span>
+                                    {devices.map((d, i) => {
+                                        const totalDevices = devices.reduce((sum, dv) => sum + dv.total, 0);
+                                        const percentage = totalDevices > 0 ? Math.round((d.total / totalDevices) * 100) : 0;
+                                        return (
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors[i % colors.length] }}></div>
+                                                    <span style={{ fontSize: '13px', textTransform: 'capitalize', color: 'var(--text)' }}>{d.device_type}</span>
+                                                </div>
+                                                <span style={{ fontWeight: '600', fontSize: '13px' }}>{percentage}%</span>
                                             </div>
-                                            <span style={{ fontWeight: '600', fontSize: '13px' }}>{Math.round((d.total / devices.reduce((sum, dv) => sum + dv.total, 0)) * 100)}%</span>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
