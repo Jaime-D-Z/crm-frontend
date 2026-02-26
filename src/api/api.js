@@ -34,8 +34,24 @@ api.interceptors.response.use(
   (error) => {
     // Handle 401 Unauthorized
     if (error.response?.status === 401) {
+      const errorCode = error.response?.data?.code;
+      
+      // Clear token
       localStorage.removeItem("crm_token");
-      // AuthContext/PrivateRoutes will handle redirect
+      
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        // Show user-friendly message based on error code
+        const message = errorCode === 'TOKEN_EXPIRED' 
+          ? 'Tu sesión ha expirado' 
+          : 'Debes iniciar sesión';
+        
+        // Store message for login page
+        sessionStorage.setItem('auth_message', message);
+        
+        // Redirect to login
+        window.location.href = '/login';
+      }
     }
 
     // Log errors only in development
@@ -44,6 +60,7 @@ api.interceptors.response.use(
         url: error.config?.url,
         method: error.config?.method,
         status: error.response?.status,
+        code: error.response?.data?.code,
         message: error.response?.data?.error || error.message,
       });
     }

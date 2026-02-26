@@ -13,11 +13,26 @@ export function AuthProvider({ children }) {
 
     // Fetch the current session from the backend
     const fetchMe = useCallback(async () => {
+        // Check if token exists before making request
+        const token = localStorage.getItem('crm_token');
+        if (!token) {
+            setUser(null);
+            setLoading(false);
+            return;
+        }
+
         try {
             const { data } = await api.get('/api/auth/me');
             setUser(data);
-        } catch {
+        } catch (error) {
+            // Clear invalid token
+            localStorage.removeItem('crm_token');
             setUser(null);
+            
+            // Log error in development
+            if (import.meta.env.VITE_ENV === 'development') {
+                console.error('fetchMe error:', error.response?.data || error.message);
+            }
         } finally {
             setLoading(false);
         }
