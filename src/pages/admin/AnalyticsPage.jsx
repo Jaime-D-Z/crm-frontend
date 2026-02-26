@@ -143,36 +143,52 @@ export default function AnalyticsPage() {
                                 </div>
                             </div>
                             <div className="section-body" style={{ padding: '24px' }}>
-                                <div style={{ height: '240px', position: 'relative' }}>
-                                    <svg width="100%" height="100%" viewBox="0 0 800 240" preserveAspectRatio="none">
-                                        <defs>
-                                            <linearGradient id="trafficGradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.2" />
-                                                <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
-                                            </linearGradient>
-                                        </defs>
-                                        {/* Grid lines */}
-                                        {[0, 1, 2, 3].map(i => (
-                                            <line key={i} x1="0" y1={i * 80} x2="800" y2={i * 80} stroke="var(--border)" strokeWidth="1" strokeDasharray="4 4" />
-                                        ))}
-                                        {/* Paths */}
-                                        {traffic.length > 0 && (
-                                            <>
-                                                <path d={generateAreaPath(traffic, 800, 240)} fill="url(#trafficGradient)" />
-                                                <path d={generateLinePath(traffic, 800, 240)} fill="none" stroke="var(--accent)" strokeWidth="3" />
-                                                {/* Dots on points */}
-                                                {traffic.map((d, i) => {
-                                                    const x = (i / (traffic.length - 1)) * 800;
-                                                    const y = 240 - (d.visits / Math.max(...traffic.map(t => t.visits), 1) * 240);
-                                                    return <circle key={i} cx={x} cy={y} r="4" fill="white" stroke="var(--accent)" strokeWidth="2" />;
-                                                })}
-                                            </>
-                                        )}
-                                    </svg>
+                                <div style={{ height: '240px', position: 'relative', display: 'flex', gap: '12px' }}>
+                                    {/* Y-axis labels */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: '0', paddingBottom: '0', minWidth: '40px' }}>
+                                        {traffic.length > 0 && (() => {
+                                            const maxVisits = Math.max(...traffic.map(t => t.visits), 1);
+                                            return [3, 2, 1, 0].map(i => (
+                                                <span key={i} style={{ fontSize: '11px', color: 'var(--text-3)', textAlign: 'right' }}>
+                                                    {Math.round((maxVisits / 3) * i)}
+                                                </span>
+                                            ));
+                                        })()}
+                                    </div>
+                                    {/* Chart */}
+                                    <div style={{ flex: 1, position: 'relative' }}>
+                                        <svg width="100%" height="100%" viewBox="0 0 800 240" preserveAspectRatio="none">
+                                            <defs>
+                                                <linearGradient id="trafficGradient" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.2" />
+                                                    <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+                                                </linearGradient>
+                                            </defs>
+                                            {/* Grid lines */}
+                                            {[0, 1, 2, 3].map(i => (
+                                                <line key={i} x1="0" y1={i * 80} x2="800" y2={i * 80} stroke="var(--border)" strokeWidth="1" strokeDasharray="4 4" />
+                                            ))}
+                                            {/* Paths */}
+                                            {traffic.length > 0 && (
+                                                <>
+                                                    <path d={generateAreaPath(traffic, 800, 240)} fill="url(#trafficGradient)" />
+                                                    <path d={generateLinePath(traffic, 800, 240)} fill="none" stroke="var(--accent)" strokeWidth="3" />
+                                                    {/* Dots on points */}
+                                                    {traffic.map((d, i) => {
+                                                        const x = (i / (traffic.length - 1)) * 800;
+                                                        const y = 240 - (d.visits / Math.max(...traffic.map(t => t.visits), 1) * 240);
+                                                        return <circle key={i} cx={x} cy={y} r="4" fill="white" stroke="var(--accent)" strokeWidth="2" />;
+                                                    })}
+                                                </>
+                                            )}
+                                        </svg>
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', color: 'var(--text-3)', fontSize: '11px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '12px', marginLeft: '52px', color: 'var(--text-3)', fontSize: '11px' }}>
                                     {traffic.map((d, i) => (
-                                        <span key={i}>{new Date(d.date).toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                        <span key={i} style={{ textAlign: 'center', minWidth: '40px' }}>
+                                            {new Date(d.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                                        </span>
                                     ))}
                                 </div>
                             </div>
