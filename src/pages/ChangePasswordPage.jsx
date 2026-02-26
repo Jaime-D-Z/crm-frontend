@@ -66,80 +66,113 @@ export default function ChangePasswordPage() {
             <Sidebar />
             <main className="crm-main">
                 <div className="crm-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - var(--nav-h))' }}>
-                    <div className="auth-card" style={{ boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)' }}>
+                    <div className="auth-card" style={{ maxWidth: '500px', width: '100%', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)' }}>
                         <div className="auth-card-header">
-                            <h2 className="auth-card-title">🔐 Cambiar Contraseña</h2>
-                            <p className="auth-card-subtitle">Debes establecer una nueva contraseña antes de continuar</p>
+                            <div className="auth-badge">🔐 Seguridad</div>
+                            <h2 className="auth-card-title">Cambiar Contraseña</h2>
+                            <p className="auth-card-subtitle">Establece una nueva contraseña segura para tu cuenta</p>
                         </div>
 
                         <form onSubmit={handleSubmit}>
-                            {errors.map((e, i) => <div key={i} className="alert alert-error" style={{ marginBottom: 12 }}>{e}</div>)}
+                            {errors.length > 0 && (
+                                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <line x1="15" y1="9" x2="9" y2="15" />
+                                        <line x1="9" y1="9" x2="15" y2="15" />
+                                    </svg>
+                                    <div>
+                                        {errors.map((e, i) => <div key={i}>{e}</div>)}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="form-group">
-                                <label className="form-label">Contraseña actual</label>
+                                <label className="form-label" htmlFor="passwordActual">Contraseña actual</label>
                                 <input
                                     type="password"
+                                    id="passwordActual"
                                     name="passwordActual"
                                     className="form-input"
                                     value={form.passwordActual}
                                     onChange={handleChange}
                                     placeholder="••••••••"
+                                    autoComplete="current-password"
                                     required
                                 />
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Nueva contraseña</label>
+                                <label className="form-label" htmlFor="passwordNueva">Nueva contraseña</label>
                                 <input
                                     type="password"
+                                    id="passwordNueva"
                                     name="passwordNueva"
                                     className="form-input"
                                     value={form.passwordNueva}
                                     onChange={handleChange}
                                     placeholder="••••••••"
+                                    autoComplete="new-password"
                                     required
                                 />
                                 {/* Strength Indicator */}
-                                <div style={{ marginTop: 8 }}>
-                                    <div style={{ height: 4, width: '100%', background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
-                                        <div style={{
-                                            height: '100%',
-                                            width: `${(strength / 4) * 100}%`,
-                                            background: getStrengthColor(),
-                                            transition: 'all 0.3s ease'
-                                        }} />
+                                {form.passwordNueva && (
+                                    <div style={{ marginTop: '8px' }}>
+                                        <div style={{ height: '4px', width: '100%', background: 'var(--bg)', borderRadius: '2px', overflow: 'hidden' }}>
+                                            <div style={{
+                                                height: '100%',
+                                                width: `${(strength / 4) * 100}%`,
+                                                background: getStrengthColor(),
+                                                transition: 'all 0.3s ease'
+                                            }} />
+                                        </div>
+                                        <div style={{ fontSize: '11px', marginTop: '4px', color: getStrengthColor(), fontWeight: 600 }}>
+                                            {strength <= 1 ? '🔴 Débil' : strength <= 3 ? '🟡 Media' : '🟢 Fuerte'}
+                                        </div>
                                     </div>
-                                    <div style={{ fontSize: 11, marginTop: 4, color: getStrengthColor(), fontWeight: 600 }}>
-                                        {form.passwordNueva && (strength <= 1 ? 'Débil' : strength <= 3 ? 'Media' : 'Fuerte')}
-                                    </div>
-                                </div>
+                                )}
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Confirmar contraseña</label>
+                                <label className="form-label" htmlFor="passwordConfirm">Confirmar contraseña</label>
                                 <input
                                     type="password"
+                                    id="passwordConfirm"
                                     name="passwordConfirm"
                                     className="form-input"
                                     value={form.passwordConfirm}
                                     onChange={handleChange}
                                     placeholder="••••••••"
+                                    autoComplete="new-password"
                                     required
                                 />
                             </div>
 
-                            <div className="password-rules" style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 20 }}>
-                                <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>La nueva contraseña debe tener:</p>
-                                <ul style={{ fontSize: 12, paddingLeft: 18, color: 'var(--text-2)' }}>
-                                    <li style={{ color: form.passwordNueva.length >= 8 ? 'var(--accent-2)' : 'inherit' }}>Al menos 8 caracteres</li>
-                                    <li style={{ color: /[A-Z]/.test(form.passwordNueva) ? 'var(--accent-2)' : 'inherit' }}>Una letra mayúscula</li>
-                                    <li style={{ color: /[0-9]/.test(form.passwordNueva) ? 'var(--accent-2)' : 'inherit' }}>Un número</li>
-                                    <li style={{ color: /[^A-Za-z0-9]/.test(form.passwordNueva) ? 'var(--accent-2)' : 'inherit' }}>Un símbolo (@, #, !, etc.)</li>
+                            <div className="password-rules" style={{ background: 'var(--bg)', padding: '12px', borderRadius: '8px', marginBottom: '20px', border: '1px solid var(--border)' }}>
+                                <p style={{ fontSize: '12px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-1)' }}>Requisitos de contraseña:</p>
+                                <ul style={{ fontSize: '12px', paddingLeft: '20px', color: 'var(--text-2)', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <li style={{ color: form.passwordNueva.length >= 8 ? 'var(--accent-2)' : 'inherit' }}>
+                                        {form.passwordNueva.length >= 8 ? '✓' : '○'} Al menos 8 caracteres
+                                    </li>
+                                    <li style={{ color: /[A-Z]/.test(form.passwordNueva) ? 'var(--accent-2)' : 'inherit' }}>
+                                        {/[A-Z]/.test(form.passwordNueva) ? '✓' : '○'} Una letra mayúscula
+                                    </li>
+                                    <li style={{ color: /[0-9]/.test(form.passwordNueva) ? 'var(--accent-2)' : 'inherit' }}>
+                                        {/[0-9]/.test(form.passwordNueva) ? '✓' : '○'} Un número
+                                    </li>
+                                    <li style={{ color: /[^A-Za-z0-9]/.test(form.passwordNueva) ? 'var(--accent-2)' : 'inherit' }}>
+                                        {/[^A-Za-z0-9]/.test(form.passwordNueva) ? '✓' : '○'} Un símbolo (@, #, !, etc.)
+                                    </li>
                                 </ul>
                             </div>
 
                             <button type="submit" className="btn btn-primary" disabled={loading}>
-                                {loading ? 'Guardando...' : 'Cambiar Contraseña'}
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                                    <polyline points="17 21 17 13 7 13 7 21" />
+                                    <polyline points="7 3 7 8 15 8" />
+                                </svg>
+                                {loading ? 'Guardando...' : 'Cambiar contraseña'}
                             </button>
                         </form>
                     </div>
