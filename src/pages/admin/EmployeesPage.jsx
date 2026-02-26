@@ -130,7 +130,7 @@ export default function EmployeesPage() {
             setEvalForm((p) => ({ ...p, employeeId: list[0].id }));
         if (!objForm.employeeId && list[0])
             setObjForm((p) => ({ ...p, employeeId: list[0].id }));
-    }, [search, type, status, evalForm.employeeId, objForm.employeeId]);
+    }, [search, type, status]);
 
     const loadEvalSummary = useCallback(async () => {
         const { data } = await api.get("/api/evaluations/summary");
@@ -209,20 +209,44 @@ export default function EmployeesPage() {
             position: roles.length > 0 ? roles.join(", ") : empForm.position
         };
 
+        console.log('📤 Enviando datos del empleado:', dataToSave);
+
         try {
-            if (editingId)
-                await api.put(`/api/admin/employees/${editingId}`, dataToSave);
-            else await api.post("/api/admin/employees", dataToSave);
+            let response;
+            if (editingId) {
+                console.log(`✏️ Actualizando empleado ID: ${editingId}`);
+                response = await api.put(`/api/admin/employees/${editingId}`, dataToSave);
+            } else {
+                console.log('➕ Creando nuevo empleado');
+                response = await api.post("/api/admin/employees", dataToSave);
+            }
             
-            // Reload employees first, then close modal
-            await loadEmployees();
-            showToast("Empleado guardado", "success");
+            console.log('✅ Respuesta del servidor:', response.data);
             
-            // Close modal and reset form after data is loaded
+            // Close modal and reset form first
             setShowModal(false);
             setEditingId(null);
             setEmpForm(EMPTY_EMP);
+            
+            // Force reload employees with fresh data
+            console.log('🔄 Recargando lista de empleados...');
+            const params = new URLSearchParams();
+            if (search) params.set("search", search);
+            if (type) params.set("type", type);
+            if (status) params.set("status", status);
+            const [listRes, dashRes] = await Promise.all([
+                api.get(`/api/admin/employees?${params}`),
+                api.get("/api/admin/dashboard"),
+            ]);
+            const list = listRes.data.employees || [];
+            console.log(`📋 Empleados cargados: ${list.length}`, list.map(e => e.name));
+            setEmployees(list);
+            setStats(dashRes.data.stats || { total: 0, byType: {}, security: {} });
+            
+            showToast("Empleado guardado", "success");
         } catch (err) {
+            console.error('❌ Error al guardar empleado:', err);
+            console.error('Respuesta del error:', err.response?.data);
             const msg = err.response?.data?.errors || [
                 err.response?.data?.error || "No se pudo guardar",
             ];

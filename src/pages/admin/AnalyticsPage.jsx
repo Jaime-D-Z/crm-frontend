@@ -108,25 +108,25 @@ export default function AnalyticsPage() {
                     <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                         <div className="stat-card">
                             <div className="stat-label">Vistas Totales</div>
-                            <div className="stat-value">{stats?.total_visits ?? '0'}</div>
+                            <div className="stat-value">{Math.round(stats?.total_visits ?? 0)}</div>
                             <div className="stat-sub">Tráfico registrado (7 días)</div>
                             <svg className="stat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                         </div>
                         <div className="stat-card">
                             <div className="stat-label">Conversion Rate</div>
-                            <div className="stat-value" style={{ color: '#10b981' }}>{ventasStats?.tasa_cierre ?? '0'}%</div>
+                            <div className="stat-value" style={{ color: '#10b981' }}>{Math.round(ventasStats?.tasa_cierre ?? 0)}%</div>
                             <div className="stat-sub">De prospectos a cierres</div>
                             <svg className="stat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                         </div>
                         <div className="stat-card">
                             <div className="stat-label">Valor Pipeline</div>
-                            <div className="stat-value" style={{ color: '#f59e0b' }}>${ventasStats?.valor_pipeline?.toLocaleString() ?? '0'}</div>
+                            <div className="stat-value" style={{ color: '#f59e0b' }}>${Math.round(ventasStats?.valor_pipeline ?? 0).toLocaleString()}</div>
                             <div className="stat-sub">Ingresos potenciales</div>
                             <svg className="stat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
                         </div>
                         <div className="stat-card">
                             <div className="stat-label">Sesiones/Usuario</div>
-                            <div className="stat-value" style={{ color: '#8b5cf6' }}>{stats?.pages_per_session ?? '0'}</div>
+                            <div className="stat-value" style={{ color: '#8b5cf6' }}>{Math.round(stats?.pages_per_session ?? 0)}</div>
                             <div className="stat-sub">Engagement promedio</div>
                             <svg className="stat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2"><path d="M12 20v-6M6 20V10M18 20V4" /></svg>
                         </div>
