@@ -1653,23 +1653,26 @@ export default function EmployeesPage() {
                                     </div>
                                 </div>
 
-                                <div style={{ background: "#f8fafc", padding: "12px", borderRadius: 8, marginTop: 15, border: "1px solid var(--border)" }}>
-                                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                                        <input
-                                            type="checkbox"
-                                            name="crearAcceso"
-                                            checked={empForm.crearAcceso}
-                                            onChange={onEmpChange}
-                                        />
-                                        Crear acceso al sistema
-                                    </label>
+                                {/* Solo mostrar "Crear acceso" cuando es un nuevo empleado */}
+                                {!editingId && (
+                                    <div style={{ background: "#f8fafc", padding: "12px", borderRadius: 8, marginTop: 15, border: "1px solid var(--border)" }}>
+                                        <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                                            <input
+                                                type="checkbox"
+                                                name="crearAcceso"
+                                                checked={empForm.crearAcceso}
+                                                onChange={onEmpChange}
+                                            />
+                                            Crear acceso al sistema
+                                        </label>
 
-                                    {empForm.crearAcceso && (
-                                        <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)", background: "#e0f2fe", padding: "8px", borderRadius: 6, border: "1px solid #bae6fd" }}>
-                                            ℹ️ Se generará una contraseña temporal y se enviará al correo del empleado.
-                                        </div>
-                                    )}
-                                </div>
+                                        {empForm.crearAcceso && (
+                                            <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)", background: "#e0f2fe", padding: "8px", borderRadius: 6, border: "1px solid #bae6fd" }}>
+                                                ℹ️ Se generará una contraseña temporal y se enviará al correo del empleado.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div
                                     style={{
