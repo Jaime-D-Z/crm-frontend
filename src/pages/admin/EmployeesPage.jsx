@@ -1701,7 +1701,7 @@ export default function EmployeesPage() {
 
             {/* --- Confirm Dialog Modal --- */}
             {confirmDialog.isOpen && (
-                <div className="modal-overlay" style={{ display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
+                <div className="modal-overlay open" style={{ display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
                     <div className="modal-content fade-in" style={{ maxWidth: 400, padding: 24, textAlign: 'center' }}>
                         <div style={{ marginBottom: 16 }}>
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" style={{ margin: '0 auto' }}>
