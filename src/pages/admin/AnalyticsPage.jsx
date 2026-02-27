@@ -120,7 +120,7 @@ export default function AnalyticsPage() {
                         </div>
                         <div className="stat-card">
                             <div className="stat-label">Valor Pipeline</div>
-                            <div className="stat-value" style={{ color: '#f59e0b' }}>${Math.round(ventasStats?.valor_pipeline ?? 0).toLocaleString()}</div>
+                            <div className="stat-value" style={{ color: '#f59e0b' }}>${Math.round(Number(ventasStats?.valor_pipeline ?? 0)).toLocaleString('en-US')}</div>
                             <div className="stat-sub">Ingresos potenciales</div>
                             <svg className="stat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
                         </div>
@@ -207,8 +207,8 @@ export default function AnalyticsPage() {
                                     <svg width="160" height="160" viewBox="0 0 36 36">
                                         <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--bg-hover)" strokeWidth="4"></circle>
                                         {devices.reduce((acc, curr, idx) => {
-                                            const total = devices.reduce((sum, d) => sum + d.total, 0);
-                                            const percentage = (curr.total / total) * 100;
+                                            const total = devices.reduce((sum, d) => sum + Number(d.total), 0);
+                                            const percentage = total > 0 ? (Number(curr.total) / total) * 100 : 0;
                                             const offset = acc.offset;
                                             acc.elements.push(
                                                 <circle
@@ -228,15 +228,15 @@ export default function AnalyticsPage() {
                                     </svg>
                                     <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
                                         <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text)' }}>
-                                            {devices.reduce((sum, d) => sum + d.total, 0)}
+                                            {devices.reduce((sum, d) => sum + Number(d.total), 0)}
                                         </div>
                                         <div style={{ fontSize: '10px', color: 'var(--text-3)', textTransform: 'uppercase' }}>Sesiones</div>
                                     </div>
                                 </div>
                                 <div style={{ width: '100%', marginTop: '24px' }}>
                                     {devices.map((d, i) => {
-                                        const totalDevices = devices.reduce((sum, dv) => sum + dv.total, 0);
-                                        const percentage = totalDevices > 0 ? Math.round((d.total / totalDevices) * 100) : 0;
+                                        const totalDevices = devices.reduce((sum, dv) => sum + Number(dv.total), 0);
+                                        const percentage = totalDevices > 0 ? Math.round((Number(d.total) / totalDevices) * 100) : 0;
                                         return (
                                             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -264,9 +264,9 @@ export default function AnalyticsPage() {
                             </div>
                             <div className="section-body" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {ventasStats && [
-                                    { label: 'Oportunidades', count: ventasStats.conteo, color: '#3b82f6', width: '100%' },
-                                    { label: 'Negociación', count: ventasStats.pipeline, color: '#f59e0b', width: `${(ventasStats.pipeline / ventasStats.conteo) * 100}%` },
-                                    { label: 'Cierres Exitosos', count: ventasStats.cerradas, color: '#10b981', width: `${(ventasStats.cerradas / ventasStats.conteo) * 100}%` }
+                                    { label: 'Oportunidades', count: Number(ventasStats.conteo), color: '#3b82f6', width: '100%' },
+                                    { label: 'Negociación', count: Number(ventasStats.pipeline || 0), color: '#f59e0b', width: `${(Number(ventasStats.pipeline || 0) / Number(ventasStats.conteo || 1)) * 100}%` },
+                                    { label: 'Cierres Exitosos', count: Number(ventasStats.cerradas || 0), color: '#10b981', width: `${(Number(ventasStats.cerradas || 0) / Number(ventasStats.conteo || 1)) * 100}%` }
                                 ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                         <div style={{
