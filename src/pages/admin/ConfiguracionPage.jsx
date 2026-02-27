@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import api from '../../api/api';
+import { useToast } from '../../context/ToastContext';
 
 export default function ConfiguracionPage() {
     const [configs, setConfigs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [savingKey, setSavingKey] = useState(null);
+    const { showToast } = useToast();
 
     useEffect(() => {
         loadConfigs();
@@ -28,8 +30,9 @@ export default function ConfiguracionPage() {
             await api.put(`/api/admin/config/${key}`, { value: newValue });
             // Update local state
             setConfigs(prev => prev.map(c => c.key_name === key ? { ...c, value_content: newValue } : c));
+            showToast('Configuración actualizada correctamente', 'success');
         } catch (err) {
-            alert('Error al actualizar configuración');
+            showToast('Error al actualizar configuración', 'error');
         } finally {
             setSavingKey(null);
         }

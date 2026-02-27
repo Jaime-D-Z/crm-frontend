@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import api from '../../api/api';
+import { useToast } from '../../context/ToastContext';
 
 export default function FacialConfigPage() {
     const [config, setConfig] = useState({
@@ -12,6 +13,7 @@ export default function FacialConfigPage() {
     });
     const [saving, setSaving] = useState(false);
     const [logs, setLogs] = useState([]);
+    const { showToast } = useToast();
 
     useEffect(() => {
         // Mocking some biometric audit logs
@@ -27,9 +29,9 @@ export default function FacialConfigPage() {
         try {
             // await api.post('/api/admin/facial/config', config);
             await new Promise(r => setTimeout(r, 800));
-            alert('Configuración biométrica actualizada con éxito.');
+            showToast('Configuración biométrica actualizada con éxito.', 'success');
         } catch (err) {
-            alert('Error al guardar la configuración.');
+            showToast('Error al guardar la configuración.', 'error');
         } finally {
             setSaving(false);
         }

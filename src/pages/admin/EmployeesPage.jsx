@@ -102,6 +102,9 @@ export default function EmployeesPage() {
     const [empForm, setEmpForm] = useState(EMPTY_EMP);
     const [empErrors, setEmpErrors] = useState([]);
 
+    // Custom Confirmation Dialog
+    const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null, onCancel: null });
+
     const [evalForm, setEvalForm] = useState(EMPTY_EVAL);
     const [evalSummary, setEvalSummary] = useState(null);
     const [evalHistory, setEvalHistory] = useState([]);
@@ -202,13 +205,21 @@ export default function EmployeesPage() {
             position: positionFinal
         };
 
-        console.log('📤 Enviando datos del empleado:', dataToSave);
+        const handleSaveSuccess = async () => {
+            setShowModal(false);
+            setEditingId(null);
+            setEmpForm(EMPTY_EMP);
+            await loadEmployees();
+            showToast("Empleado guardado", "success");
+        };
 
+        console.log('📤 Enviando datos del empleado:', dataToSave);
         try {
             let response;
             if (editingId) {
                 console.log(`✏️ Actualizando empleado ID: ${editingId}`);
                 response = await api.put(`/api/admin/employees/${editingId}`, dataToSave);
+                handleSaveSuccess();
             } else {
                 console.log('➕ Creando nuevo empleado');
                 response = await api.post("/api/admin/employees", dataToSave);
@@ -219,38 +230,28 @@ export default function EmployeesPage() {
                         showToast(response.data.message, "error");
                         return; // Bloqueado, no crear
                     } else {
-                        const confirm = window.confirm(response.data.message + "\n\n¿Desea crear el empleado de todos modos?");
-                        if (!confirm) return;
-                        // Intentar otra vez con confirmación
-                        dataToSave.duplicateConfirmed = true;
-                        response = await api.post("/api/admin/employees", dataToSave);
+                        // Show custom confirm instead of window.confirm
+                        setConfirmDialog({
+                            isOpen: true,
+                            title: "Confirmar Creación",
+                            message: response.data.message + "\n\n¿Desea crear el empleado de todos modos?",
+                            onConfirm: async () => {
+                                setConfirmDialog({ isOpen: false, message: '' });
+                                dataToSave.duplicateConfirmed = true;
+                                try {
+                                    await api.post("/api/admin/employees", dataToSave);
+                                    handleSaveSuccess();
+                                } catch (err) {
+                                    showToast("Error al guardar empleado forzado", "error");
+                                }
+                            },
+                            onCancel: () => setConfirmDialog({ isOpen: false, message: '' })
+                        });
+                        return;
                     }
                 }
+                handleSaveSuccess();
             }
-
-            console.log('✅ Respuesta del servidor:', response.data);
-
-            // Close modal and reset form first
-            setShowModal(false);
-            setEditingId(null);
-            setEmpForm(EMPTY_EMP);
-
-            // Force reload employees with fresh data
-            console.log('🔄 Recargando lista de empleados...');
-            const params = new URLSearchParams();
-            if (search) params.set("search", search);
-            if (type) params.set("type", type);
-            if (status) params.set("status", status);
-            const [listRes, dashRes] = await Promise.all([
-                api.get(`/api/admin/employees?${params}`),
-                api.get("/api/admin/dashboard"),
-            ]);
-            const list = listRes.data.employees || [];
-            console.log(`📋 Empleados cargados: ${list.length}`, list.map(e => e.name));
-            setEmployees(list);
-            setStats(dashRes.data.stats || { total: 0, byType: {}, security: {} });
-
-            showToast("Empleado guardado", "success");
         } catch (err) {
             console.error('❌ Error al guardar empleado:', err);
             console.error('Respuesta del error:', err.response?.data);
@@ -285,10 +286,22 @@ export default function EmployeesPage() {
     };
 
     const deleteEmployee = async (id) => {
-        if (!window.confirm("¿Eliminar este empleado?")) return;
-        await api.delete(`/api/admin/employees/${id}`);
-        await loadEmployees();
-        showToast("Empleado eliminado", "success");
+        setConfirmDialog({
+            isOpen: true,
+            title: "Eliminar Empleado",
+            message: "¿Estás seguro de que deseas eliminar a este empleado de forma permanente?",
+            onConfirm: async () => {
+                setConfirmDialog({ isOpen: false, message: '' });
+                try {
+                    await api.delete(`/api/admin/employees/${id}`);
+                    await loadEmployees();
+                    showToast("Empleado eliminado", "success");
+                } catch (err) {
+                    showToast("Error al eliminar", "error");
+                }
+            },
+            onCancel: () => setConfirmDialog({ isOpen: false, message: '' })
+        });
     };
 
     const saveEvaluation = async (e) => {
@@ -1681,6 +1694,31 @@ export default function EmployeesPage() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- Confirm Dialog Modal --- */}
+            {confirmDialog.isOpen && (
+                <div className="modal-overlay" style={{ display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
+                    <div className="modal-content fade-in" style={{ maxWidth: 400, padding: 24, textAlign: 'center' }}>
+                        <div style={{ marginBottom: 16 }}>
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" style={{ margin: '0 auto' }}>
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                        </div>
+                        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: "var(--text)" }}>{confirmDialog.title}</h3>
+                        <p style={{ color: "var(--text-3)", fontSize: 14, whiteSpace: 'pre-line' }}>{confirmDialog.message}</p>
+                        <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: 'center' }}>
+                            <button className="btn btn-white" onClick={confirmDialog.onCancel}>
+                                Cancelar
+                            </button>
+                            <button className="btn btn-primary" style={{ background: '#ef4444', borderColor: '#ef4444' }} onClick={confirmDialog.onConfirm}>
+                                Confirmar
+                            </button>
                         </div>
                     </div>
                 </div>
