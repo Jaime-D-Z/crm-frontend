@@ -240,7 +240,7 @@ export default function EmployeesPage() {
                 console.log('➕ Creando nuevo empleado');
                 response = await api.post("/api/admin/employees", dataToSave);
 
-                // Manejar la advertencia de duplicado que retorna ok: true pero no crea el usuario
+                // Manejar la advertencia de duplicado que retorna ok: true pero no crea el usuario a menos que confirmes
                 if (response.data.warning === 'duplicate_warning') {
                     if (response.data.severity === 'high') {
                         showToast(response.data.message, "error");
@@ -266,6 +266,8 @@ export default function EmployeesPage() {
                         return;
                     }
                 }
+
+                // Si llegamos aquí y no había warning, la creación fue exitosa.
                 handleSaveSuccess();
             }
         } catch (err) {
