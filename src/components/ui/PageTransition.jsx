@@ -23,30 +23,37 @@ export default function PageTransition({ children }) {
 
     const isAdminOrEmployee = location.pathname.startsWith('/admin') || location.pathname.startsWith('/employee');
 
-    if (isTransitioning) {
-        return (
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                left: isAdminOrEmployee ? 'var(--sidebar-w, 280px)' : 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 9999,
-                animation: 'loaderFadeIn 0.3s ease-out',
-                transition: 'left 0.3s ease'
-            }}>
-                <LoadingSpinner size="large" text="Cargando vista..." />
-            </div>
-        );
-    }
-
     return (
-        <div style={{ animation: 'fadeIn 0.3s ease-out', width: '100%', height: '100%' }}>
-            {children}
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            {/* View container */}
+            <div style={{
+                animation: 'fadeIn 0.3s ease-out',
+                width: '100%',
+                height: '100%',
+                opacity: isTransitioning ? 0 : 1,
+                transition: 'opacity 0.2s ease-in-out'
+            }}>
+                {children}
+            </div>
+
+            {/* Transition Overlay */}
+            {isTransitioning && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: isAdminOrEmployee ? 'var(--sidebar-w, 280px)' : 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    animation: 'loaderFadeIn 0.3s ease-out'
+                }}>
+                    <LoadingSpinner size="large" text="Cargando vista..." />
+                </div>
+            )}
         </div>
     );
 }
