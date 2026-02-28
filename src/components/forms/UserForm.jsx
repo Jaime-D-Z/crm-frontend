@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/api';
 import toast from 'react-hot-toast';
+import FaceCapture from '../ui/FaceCapture';
 
 export default function UserForm({ user, onSubmit, onCancel }) {
     const [formData, setFormData] = useState({
@@ -13,11 +14,14 @@ export default function UserForm({ user, onSubmit, onCancel }) {
         status: 'active',
         phone: '',
         department: '',
-        position: ''
+        position: '',
+        photo_url_base64: null
     });
     const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
+    const [showFaceCapture, setShowFaceCapture] = useState(false);
+    const [capturedPhoto, setCapturedPhoto] = useState(null);
 
     const isEditing = !!user;
 
@@ -34,8 +38,13 @@ export default function UserForm({ user, onSubmit, onCancel }) {
                 status: user.status || 'active',
                 phone: user.phone || '',
                 department: user.department || '',
-                position: user.position || ''
+                position: user.position || '',
+                photo_url_base64: null
             });
+            // Load existing photo if available
+            if (user.photo_url) {
+                setCapturedPhoto(user.photo_url);
+            }
         }
     }, [user, isEditing]);
 
@@ -60,7 +69,7 @@ export default function UserForm({ user, onSubmit, onCancel }) {
             newErrors.name = 'El nombre no puede exceder 100 caracteres';
         }
 
-        // Email validation
+        // Email validation - ÚNICO CAMPO QUE DEBE SER ÚNICO
         if (!formData.email.trim()) {
             newErrors.email = 'El email es obligatorio';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -113,7 +122,8 @@ export default function UserForm({ user, onSubmit, onCancel }) {
                 status: formData.status,
                 phone: formData.phone.trim() || null,
                 department: formData.department.trim() || null,
-                position: formData.position.trim() || null
+                position: formData.position.trim() || null,
+                photo_url_base64: formData.photo_url_base64
             };
 
             // Include password only if provided
@@ -171,6 +181,24 @@ export default function UserForm({ user, onSubmit, onCancel }) {
         if (strength <= 50) return { label: 'Media', color: '#fbbf24', width: '50%' };
         if (strength <= 75) return { label: 'Fuerte', color: '#34d399', width: '75%' };
         return { label: 'Muy Fuerte', color: '#10b981', width: '100%' };
+    };
+
+    const handleFaceCapture = (photoBase64) => {
+        setCapturedPhoto(photoBase64);
+        setFormData(prev => ({
+            ...prev,
+            photo_url_base64: photoBase64
+        }));
+        setShowFaceCapture(false);
+        toast.success('Foto capturada correctamente');
+    };
+
+    const handleRemovePhoto = () => {
+        setCapturedPhoto(null);
+        setFormData(prev => ({
+            ...prev,
+            photo_url_base64: null
+        }));
     };
 
     const strength = getPasswordStrength(formData.password);
@@ -302,6 +330,53 @@ export default function UserForm({ user, onSubmit, onCancel }) {
                                 className="form-input" placeholder="p. ej. Analista Senior"
                             />
                         </div>
+
+                        {/* Face Photo Section */}
+                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                            <label className="form-label">Foto Facial (Opcional)</label>
+                            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                {capturedPhoto && (
+                                    <div style={{ position: 'relative', width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--border)' }}>
+                                        <img 
+                                            src={capturedPhoto.startsWith('data:') ? capturedPhoto : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${capturedPhoto}`} 
+                                            alt="Foto capturada" 
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleRemovePhoto}
+                                            style={{
+                                                position: 'absolute', top: '4px', right: '4px',
+                                                background: 'rgba(0,0,0,0.7)', color: 'white',
+                                                border: 'none', borderRadius: '50%', width: '24px', height: '24px',
+                                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            }}
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )}
+                                <div style={{ flex: 1 }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowFaceCapture(true)}
+                                        className="btn btn-secondary"
+                                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                            <circle cx="12" cy="13" r="4" />
+                                        </svg>
+                                        {capturedPhoto ? 'Cambiar Foto' : 'Capturar o Subir Foto'}
+                                    </button>
+                                    <p style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '8px', marginBottom: 0 }}>
+                                        Puedes capturar en vivo con la cámara o subir una imagen desde tu dispositivo
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
@@ -314,6 +389,14 @@ export default function UserForm({ user, onSubmit, onCancel }) {
                     </div>
                 </form>
             </div>
+
+            {/* Face Capture Modal */}
+            {showFaceCapture && (
+                <FaceCapture
+                    onCapture={handleFaceCapture}
+                    onCancel={() => setShowFaceCapture(false)}
+                />
+            )}
         </div>
     );
 }

@@ -4,6 +4,7 @@ import api from '../../api/api';
 import toast from 'react-hot-toast';
 
 // Components
+import Sidebar from '../../components/Sidebar';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import EmptyState from '../../components/ui/EmptyState';
 import UserForm from '../../components/forms/UserForm';
