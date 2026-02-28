@@ -3,6 +3,7 @@ import Sidebar from "../../components/Sidebar";
 import SelectionLoader from "../../components/ui/SelectionLoader";
 import { useToast } from "../../context/ToastContext";
 import api from "../../api/api";
+import FaceCapture from "../../components/ui/FaceCapture";
 
 const EMPTY_EMP = {
     name: "",
@@ -19,6 +20,7 @@ const EMPTY_EMP = {
     roleId: "",
     // New professional info select
     role_profesional: "",
+    photo_url_base64: null,
 };
 const EMPTY_EVAL = {
     employeeId: "",
@@ -102,6 +104,7 @@ export default function EmployeesPage() {
     const [editingId, setEditingId] = useState(null);
     const [empForm, setEmpForm] = useState(EMPTY_EMP);
     const [empErrors, setEmpErrors] = useState([]);
+    const [showFaceCapture, setShowFaceCapture] = useState(false);
 
     // Custom Confirmation Dialog
     const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null, onCancel: null });
@@ -1489,6 +1492,15 @@ export default function EmployeesPage() {
             {/* ══════════════ MODAL EMPLEADO ══════════════ */}
             {showModal && (
                 <div className="modal-overlay open" onClick={() => setShowModal(false)}>
+                    {showFaceCapture && (
+                        <FaceCapture
+                            onCapture={(base64) => {
+                                setEmpForm(p => ({ ...p, photo_url_base64: base64 }));
+                                setShowFaceCapture(false);
+                            }}
+                            onCancel={() => setShowFaceCapture(false)}
+                        />
+                    )}
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>{editingId ? "Editar empleado" : "Nuevo empleado"}</h2>
@@ -1522,8 +1534,8 @@ export default function EmployeesPage() {
                                 <div style={{ marginBottom: 20, textAlign: "center", padding: "10px", background: "var(--surface-1)", borderRadius: 10, border: "1px dashed var(--border)" }}>
                                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
                                         <div style={{ width: 80, height: 80, borderRadius: "50%", background: "var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, overflow: "hidden" }}>
-                                            {empForm.photo_url ? (
-                                                <img src={`${api.defaults.baseURL}${empForm.photo_url}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                            {empForm.photo_url_base64 || empForm.photo_url ? (
+                                                <img src={empForm.photo_url_base64 || `${api.defaults.baseURL}${empForm.photo_url}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                             ) : (
                                                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -1534,7 +1546,7 @@ export default function EmployeesPage() {
                                         <button
                                             type="button"
                                             className="btn btn-secondary btn-sm"
-                                            onClick={() => showToast("Iniciando Reconocimiento Facial...", "info")}
+                                            onClick={() => setShowFaceCapture(true)}
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6 }}>
                                                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
