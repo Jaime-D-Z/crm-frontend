@@ -96,7 +96,7 @@ export default function EmployeesPage() {
     const [employees, setEmployees] = useState([]);
     const [search, setSearch] = useState("");
     const [type, setType] = useState("");
-    const [status, setStatus] = useState("");
+    const [status, setStatus] = useState("active"); // Por defecto solo mostrar activos
     const [stats, setStats] = useState({ total: 0, byType: {}, security: {} });
     const [dups, setDups] = useState([]);
 
