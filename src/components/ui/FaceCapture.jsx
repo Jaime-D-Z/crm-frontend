@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from 'react';
 export default function FaceCapture({ onCapture, onCancel }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    const fileInputRef = useRef(null);
     const [stream, setStream] = useState(null);
     const [error, setError] = useState('');
 
@@ -47,10 +48,26 @@ export default function FaceCapture({ onCapture, onCancel }) {
         onCapture(photoDataUrl);
     };
 
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64Str = event.target.result;
+            onCapture(base64Str);
+        };
+        reader.readAsDataURL(file);
+    };
+
     return (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ background: 'var(--surface)', padding: 20, borderRadius: 12, maxWidth: 640, width: '100%', textAlign: 'center' }}>
                 <h3 style={{ marginTop: 0, marginBottom: 16 }}>Captura Facial</h3>
+
+                <p style={{ color: 'var(--text-secondary)', marginBottom: 20, fontSize: '0.9rem' }}>
+                    Ubica el rostro frente a la cámara o sube una fotografía.
+                </p>
 
                 {error ? (
                     <div style={{ padding: 20, background: '#fef2f2', color: '#dc2626', borderRadius: 8, marginBottom: 16 }}>
@@ -74,7 +91,7 @@ export default function FaceCapture({ onCapture, onCancel }) {
                     </div>
                 )}
 
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
                     <button type="button" className="btn btn-secondary" onClick={onCancel}>
                         Cancelar
                     </button>
@@ -87,6 +104,21 @@ export default function FaceCapture({ onCapture, onCancel }) {
                             Tomar y Guardar Foto
                         </button>
                     )}
+                    <button type="button" className="btn btn-secondary" onClick={() => fileInputRef.current.click()} style={{ background: "var(--surface-3)", color: "var(--text-prominent)" }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6 }}>
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        Subir Archivo
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: "none" }}
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                    />
                 </div>
             </div>
         </div>
