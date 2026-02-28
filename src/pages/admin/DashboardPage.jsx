@@ -5,11 +5,77 @@ import api from '../../api/api';
 const ACTION_LABELS = {
     login: { label: 'Inicio de sesión', color: '#4ade80' },
     logout: { label: 'Cierre de sesión', color: '#94a3b8' },
-    employee_created: { label: 'Empleado registrado', color: '#60a5fa' },
+    employee_created: { label: 'Empleado creado', color: '#60a5fa' },
     employee_updated: { label: 'Empleado actualizado', color: '#a78bfa' },
+    employee_deleted: { label: 'Empleado desactivado', color: '#f87171' },
+    employee_deactivated: { label: 'Empleado desactivado', color: '#f87171' },
+    employee_permanently_deleted: { label: 'Empleado eliminado', color: '#dc2626' },
+    employee_photo_updated: { label: 'Foto actualizada', color: '#a78bfa' },
     login_failed: { label: 'Login fallido', color: '#f87171' },
     password_changed: { label: 'Contraseña cambiada', color: '#34d399' },
+    evaluation_created: { label: 'Evaluación creada', color: '#14b8a6' },
+    objective_created: { label: 'Objetivo creado', color: '#a855f7' },
+    objective_updated: { label: 'Objetivo actualizado', color: '#ec4899' },
+    attendance_facial_checkin: { label: 'Entrada facial', color: '#10b981' },
+    attendance_facial_checkout: { label: 'Salida facial', color: '#6b7280' },
+    facial_recognition_failed: { label: 'Reconocimiento fallido', color: '#ef4444' },
+    user_created: { label: 'Usuario creado', color: '#3b82f6' },
+    user_updated: { label: 'Usuario actualizado', color: '#8b5cf6' },
+    user_deleted: { label: 'Usuario eliminado', color: '#ef4444' },
 };
+
+// Format log details
+function formatLogDetails(log) {
+    let meta = log.meta;
+    if (typeof meta === 'string') {
+        try {
+            meta = JSON.parse(meta);
+        } catch (e) {
+            return '';
+        }
+    }
+    
+    switch(log.action) {
+        // Facial recognition events
+        case 'facial_recognition_failed':
+            if (meta?.reason === 'no_face_detected') {
+                return `No se detectó rostro (${meta.tipo})`;
+            }
+            return `Similitud ${meta?.similarity?.toFixed(1)}% < ${meta?.threshold}%`;
+        
+        case 'attendance_facial_checkin':
+            return `Entrada con ${meta?.similarity?.toFixed(1)}% de similitud`;
+        
+        case 'attendance_facial_checkout':
+            return `Salida con ${meta?.similarity?.toFixed(1)}% de similitud`;
+        
+        // Employee events
+        case 'employee_created':
+            return meta?.employeeName ? `"${meta.employeeName}" registrado` : '';
+        
+        case 'employee_updated':
+            return meta?.employeeName ? `"${meta.employeeName}" actualizado` : '';
+        
+        case 'employee_deleted':
+        case 'employee_deactivated':
+            return meta?.employeeName ? `"${meta.employeeName}" desactivado` : '';
+        
+        case 'employee_permanently_deleted':
+            return meta?.employeeName ? `"${meta.employeeName}" eliminado` : '';
+        
+        // Evaluation events
+        case 'evaluation_created':
+            return meta?.employeeName ? `Para ${meta.employeeName}` : '';
+        
+        // Objective events
+        case 'objective_created':
+        case 'objective_updated':
+            return meta?.titulo ? `"${meta.titulo}"` : '';
+        
+        default:
+            return '';
+    }
+}
 
 const empTypeLabels = {
     instructor: 'Instructor',
@@ -173,12 +239,18 @@ export default function AdminDashboardPage() {
                                 ) : (
                                     data.logs.map((l, i) => {
                                         const info = ACTION_LABELS[l.action] || { label: l.action, color: '#94a3b8' };
+                                        const details = formatLogDetails(l);
                                         return (
                                             <div key={i} className="log-item" style={{ borderBottom: '1px solid var(--border)', padding: '12px 16px' }}>
                                                 <div className="log-dot" style={{ background: info.color }}></div>
                                                 <div style={{ flex: 1, marginLeft: '12px' }}>
                                                     <div style={{ fontWeight: '600', fontSize: '14px' }}>{info.label}</div>
-                                                    <div style={{ fontSize: '12px', color: 'var(--text-3)' }}>{l.user_name || 'Sistema'} · {l.ip}</div>
+                                                    {details && (
+                                                        <div style={{ fontSize: '12px', color: 'var(--text-2)', marginTop: '2px' }}>{details}</div>
+                                                    )}
+                                                    <div style={{ fontSize: '12px', color: 'var(--text-3)', marginTop: '4px' }}>
+                                                        {l.user_name || 'Sistema'} · {l.ip}
+                                                    </div>
                                                 </div>
                                                 <div style={{ fontSize: '11px', color: 'var(--text-3)', fontWeight: '500' }}>{timeAgo(l.created_at)}</div>
                                             </div>

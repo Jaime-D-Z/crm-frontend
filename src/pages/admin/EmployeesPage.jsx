@@ -304,22 +304,49 @@ export default function EmployeesPage() {
     };
 
     const deleteEmployee = async (id) => {
-        setConfirmDialog({
-            isOpen: true,
-            title: "Eliminar Empleado",
-            message: "¿Estás seguro de que deseas eliminar a este empleado de forma permanente?",
-            onConfirm: async () => {
-                setConfirmDialog({ isOpen: false, message: '' });
-                try {
-                    await api.delete(`/api/admin/employees/${id}`);
-                    await loadEmployees();
-                    showToast("Empleado eliminado", "success");
-                } catch (err) {
-                    showToast("Error al eliminar", "error");
-                }
-            },
-            onCancel: () => setConfirmDialog({ isOpen: false, message: '' })
-        });
+        // Find the employee to check their status
+        const emp = employees.find(e => e.id === id);
+        if (!emp) return;
+
+        const isActive = emp.status === 'active';
+
+        if (isActive) {
+            // First step: Deactivate (soft delete)
+            setConfirmDialog({
+                isOpen: true,
+                title: "Desactivar Empleado",
+                message: `¿Deseas desactivar a ${emp.name}? El empleado pasará a estado inactivo pero sus datos se conservarán.`,
+                onConfirm: async () => {
+                    setConfirmDialog({ isOpen: false, message: '' });
+                    try {
+                        await api.delete(`/api/admin/employees/${id}`);
+                        await loadEmployees();
+                        showToast("Empleado desactivado correctamente", "success");
+                    } catch (err) {
+                        showToast("Error al desactivar empleado", "error");
+                    }
+                },
+                onCancel: () => setConfirmDialog({ isOpen: false, message: '' })
+            });
+        } else {
+            // Second step: Permanent delete
+            setConfirmDialog({
+                isOpen: true,
+                title: "⚠️ Eliminar Permanentemente",
+                message: `¿Estás COMPLETAMENTE SEGURO de eliminar permanentemente a ${emp.name}? Esta acción NO se puede deshacer y se perderán todos los datos asociados (asistencias, evaluaciones, objetivos, etc.).`,
+                onConfirm: async () => {
+                    setConfirmDialog({ isOpen: false, message: '' });
+                    try {
+                        await api.delete(`/api/admin/employees/${id}/permanent`);
+                        await loadEmployees();
+                        showToast("Empleado eliminado permanentemente", "success");
+                    } catch (err) {
+                        showToast(err.response?.data?.error || "Error al eliminar empleado", "error");
+                    }
+                },
+                onCancel: () => setConfirmDialog({ isOpen: false, message: '' })
+            });
+        }
     };
 
     const saveEvaluation = async (e) => {
@@ -678,7 +705,33 @@ export default function EmployeesPage() {
                                                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                                     </svg>
                                                 </button>
-                                                <button className="btn btn-ghost btn-sm" style={{ color: "#ef4444" }} onClick={() => deleteEmployee(emp.id)} title="Eliminar">
+                                                {emp.status === 'inactive' && (
+                                                    <button 
+                                                        className="btn btn-ghost btn-sm" 
+                                                        style={{ color: "#10b981" }} 
+                                                        onClick={async () => {
+                                                            try {
+                                                                await api.put(`/api/admin/employees/${emp.id}`, { status: 'active' });
+                                                                await loadEmployees();
+                                                                showToast("Empleado reactivado", "success");
+                                                            } catch (err) {
+                                                                showToast("Error al reactivar", "error");
+                                                            }
+                                                        }} 
+                                                        title="Reactivar"
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <polyline points="23 4 23 10 17 10"/>
+                                                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                                <button 
+                                                    className="btn btn-ghost btn-sm" 
+                                                    style={{ color: "#ef4444" }} 
+                                                    onClick={() => deleteEmployee(emp.id)} 
+                                                    title={emp.status === 'active' ? 'Desactivar' : 'Eliminar permanentemente'}
+                                                >
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                         <polyline points="3 6 5 6 21 6" />
                                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -760,17 +813,6 @@ export default function EmployeesPage() {
                                                         <div style={{ display: "flex", gap: 4 }}>
                                                             <button
                                                                 className="btn btn-ghost btn-sm"
-                                                                title="Ver detalle"
-                                                                onClick={() => editEmployee(emp)}
-                                                                style={{ padding: "4px 8px" }}
-                                                            >
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                                                    <circle cx="12" cy="12" r="3" />
-                                                                </svg>
-                                                            </button>
-                                                            <button
-                                                                className="btn btn-ghost btn-sm"
                                                                 title="Editar"
                                                                 onClick={() => editEmployee(emp)}
                                                                 style={{ padding: "4px 8px" }}
@@ -780,25 +822,30 @@ export default function EmployeesPage() {
                                                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                                                 </svg>
                                                             </button>
+                                                            {emp.status === 'inactive' && (
+                                                                <button
+                                                                    className="btn btn-ghost btn-sm"
+                                                                    title="Reactivar"
+                                                                    style={{ padding: "4px 8px", color: "#10b981" }}
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await api.put(`/api/admin/employees/${emp.id}`, { status: 'active' });
+                                                                            await loadEmployees();
+                                                                            showToast("Empleado reactivado", "success");
+                                                                        } catch (err) {
+                                                                            showToast("Error al reactivar", "error");
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <polyline points="23 4 23 10 17 10"/>
+                                                                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                                                    </svg>
+                                                                </button>
+                                                            )}
                                                             <button
                                                                 className="btn btn-ghost btn-sm"
-                                                                title="Desactivar"
-                                                                style={{ padding: "4px 8px", color: "#f59e0b" }}
-                                                                onClick={async () => {
-                                                                    const newStatus = emp.status === "active" ? "inactive" : "active";
-                                                                    await api.put(`/api/admin/employees/${emp.id}`, { ...emp, employeeType: emp.employee_type, status: newStatus });
-                                                                    await loadEmployees();
-                                                                    showToast(`Empleado ${newStatus === "active" ? "activado" : "desactivado"}`, "success");
-                                                                }}
-                                                            >
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <circle cx="12" cy="12" r="10" />
-                                                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                                                                </svg>
-                                                            </button>
-                                                            <button
-                                                                className="btn btn-ghost btn-sm"
-                                                                title="Eliminar"
+                                                                title={emp.status === 'active' ? 'Desactivar' : 'Eliminar permanentemente'}
                                                                 onClick={() => deleteEmployee(emp.id)}
                                                                 style={{ padding: "4px 8px", color: "#ef4444" }}
                                                             >
