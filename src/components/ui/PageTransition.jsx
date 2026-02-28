@@ -29,13 +29,12 @@ export default function PageTransition({ children }) {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                backgroundColor: 'rgba(15, 23, 42, 0.7)',
-                backdropFilter: 'blur(4px)',
+                backgroundColor: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 zIndex: 9999,
-                animation: 'fadeIn 0.2s ease-out'
+                animation: 'loaderFadeIn 0.3s ease-out'
             }}>
                 <LoadingSpinner size="large" text="Cargando vista..." />
             </div>
