@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar";
+import SelectionLoader from "../../components/ui/SelectionLoader";
 import { useToast } from "../../context/ToastContext";
 import api from "../../api/api";
 
@@ -108,11 +109,13 @@ export default function EmployeesPage() {
     const [evalForm, setEvalForm] = useState(EMPTY_EVAL);
     const [evalSummary, setEvalSummary] = useState(null);
     const [evalHistory, setEvalHistory] = useState([]);
+    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
     const [objForm, setObjForm] = useState(EMPTY_OBJ);
     const [objFilters, setObjFilters] = useState({ estado: "", search: "" });
     const [objectives, setObjectives] = useState([]);
     const [objSummary, setObjSummary] = useState({});
+    const [isLoadingObjectives, setIsLoadingObjectives] = useState(false);
 
     const loadEmployees = useCallback(async () => {
         const params = new URLSearchParams();
@@ -139,21 +142,31 @@ export default function EmployeesPage() {
 
     const loadEvalHistory = useCallback(async (employeeId) => {
         if (!employeeId) return setEvalHistory([]);
-        const { data } = await api.get(`/api/evaluations/${employeeId}`);
-        setEvalHistory(data.evaluations || []);
+        setIsLoadingDetails(true);
+        try {
+            const { data } = await api.get(`/api/evaluations/${employeeId}`);
+            setEvalHistory(data.evaluations || []);
+        } finally {
+            setIsLoadingDetails(false);
+        }
     }, []);
 
     const loadObjectives = useCallback(async () => {
-        const params = new URLSearchParams();
-        if (objFilters.estado) params.set("estado", objFilters.estado);
-        if (objFilters.search) params.set("search", objFilters.search);
-        const { data } = await api.get(`/api/objectives?${params}`);
-        setObjectives(data.objectives || []);
-        const map = {};
-        (data.summary || []).forEach((row) => {
-            map[row.estado] = Number(row.total || 0);
-        });
-        setObjSummary(map);
+        setIsLoadingObjectives(true);
+        try {
+            const params = new URLSearchParams();
+            if (objFilters.estado) params.set("estado", objFilters.estado);
+            if (objFilters.search) params.set("search", objFilters.search);
+            const { data } = await api.get(`/api/objectives?${params}`);
+            setObjectives(data.objectives || []);
+            const map = {};
+            (data.summary || []).forEach((row) => {
+                map[row.estado] = Number(row.total || 0);
+            });
+            setObjSummary(map);
+        } finally {
+            setIsLoadingObjectives(false);
+        }
     }, [objFilters]);
 
     useEffect(() => {
@@ -994,40 +1007,44 @@ export default function EmployeesPage() {
                                         </div>
                                     )}
 
-                                    <table className="crm-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Fecha</th>
-                                                <th>Puntaje</th>
-                                                <th>Evaluador</th>
-                                                <th>Comentario</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {evalHistory.map((ev) => (
-                                                <tr key={ev.id}>
-                                                    <td style={{ whiteSpace: "nowrap" }}>{ev.fecha}</td>
-                                                    <td>
-                                                        <span style={{ color: "#f59e0b", fontWeight: 700 }}>
-                                                            {"★".repeat(ev.puntaje)}{"☆".repeat(5 - ev.puntaje)}
-                                                        </span>
-                                                        <span style={{ marginLeft: 4, fontSize: 12 }}>({ev.puntaje})</span>
-                                                    </td>
-                                                    <td>{ev.evaluador_name || "Sistema"}</td>
-                                                    <td style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                                                        {ev.comentario || "—"}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {!evalHistory.length && (
+                                    {isLoadingDetails ? (
+                                        <SelectionLoader text={`Cargando historial de ${empSelectedName || "empleado"}...`} />
+                                    ) : (
+                                        <table className="crm-table">
+                                            <thead>
                                                 <tr>
-                                                    <td colSpan={4} style={{ textAlign: "center", color: "var(--text-muted)", padding: 24 }}>
-                                                        Sin evaluaciones para este empleado
-                                                    </td>
+                                                    <th>Fecha</th>
+                                                    <th>Puntaje</th>
+                                                    <th>Evaluador</th>
+                                                    <th>Comentario</th>
                                                 </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {evalHistory.map((ev) => (
+                                                    <tr key={ev.id}>
+                                                        <td style={{ whiteSpace: "nowrap" }}>{ev.fecha}</td>
+                                                        <td>
+                                                            <span style={{ color: "#f59e0b", fontWeight: 700 }}>
+                                                                {"★".repeat(ev.puntaje)}{"☆".repeat(5 - ev.puntaje)}
+                                                            </span>
+                                                            <span style={{ marginLeft: 4, fontSize: 12 }}>({ev.puntaje})</span>
+                                                        </td>
+                                                        <td>{ev.evaluador_name || "Sistema"}</td>
+                                                        <td style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                                                            {ev.comentario || "—"}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {!evalHistory.length && (
+                                                    <tr>
+                                                        <td colSpan={4} style={{ textAlign: "center", color: "var(--text-muted)", padding: 24 }}>
+                                                            Sin evaluaciones para este empleado
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    )}
                                 </div>
                             </div>
                         </>
@@ -1202,119 +1219,125 @@ export default function EmployeesPage() {
                                         </button>
                                     </div>
 
-                                    {objectives.map((o) => {
-                                        const stateColors = {
-                                            pendiente: "#6b7280",
-                                            en_progreso: "#3b82f6",
-                                            completado: "#10b981",
-                                            vencido: "#ef4444",
-                                        };
-                                        const col = stateColors[o.estado] || "#6b7280";
-                                        return (
-                                            <div
-                                                key={o.id}
-                                                style={{
-                                                    border: "1px solid var(--border)",
-                                                    borderRadius: 10,
-                                                    padding: "14px 16px",
-                                                    marginBottom: 10,
-                                                    borderLeft: `4px solid ${col}`,
-                                                }}
-                                            >
-                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                                                    <div>
-                                                        <div style={{ fontWeight: 700, fontSize: 14 }}>{o.titulo}</div>
-                                                        <div style={{ fontSize: 12, color: "var(--text-muted)", display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                                    <circle cx="12" cy="7" r="4" />
-                                                                </svg>
-                                                                {o.employee_name}
-                                                            </span>
-                                                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                                                                    <line x1="16" y1="2" x2="16" y2="6" />
-                                                                    <line x1="8" y1="2" x2="8" y2="6" />
-                                                                    <line x1="3" y1="10" x2="21" y2="10" />
-                                                                </svg>
-                                                                {o.fecha_limite || "Sin fecha"}
+                                    {isLoadingObjectives ? (
+                                        <SelectionLoader text="Cargando objetivos..." />
+                                    ) : (
+                                        <>
+                                            {objectives.map((o) => {
+                                                const stateColors = {
+                                                    pendiente: "#6b7280",
+                                                    en_progreso: "#3b82f6",
+                                                    completado: "#10b981",
+                                                    vencido: "#ef4444",
+                                                };
+                                                const col = stateColors[o.estado] || "#6b7280";
+                                                return (
+                                                    <div
+                                                        key={o.id}
+                                                        style={{
+                                                            border: "1px solid var(--border)",
+                                                            borderRadius: 10,
+                                                            padding: "14px 16px",
+                                                            marginBottom: 10,
+                                                            borderLeft: `4px solid ${col}`,
+                                                        }}
+                                                    >
+                                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                                                            <div>
+                                                                <div style={{ fontWeight: 700, fontSize: 14 }}>{o.titulo}</div>
+                                                                <div style={{ fontSize: 12, color: "var(--text-muted)", display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                                            <circle cx="12" cy="7" r="4" />
+                                                                        </svg>
+                                                                        {o.employee_name}
+                                                                    </span>
+                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                                                            <line x1="16" y1="2" x2="16" y2="6" />
+                                                                            <line x1="8" y1="2" x2="8" y2="6" />
+                                                                            <line x1="3" y1="10" x2="21" y2="10" />
+                                                                        </svg>
+                                                                        {o.fecha_limite || "Sin fecha"}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <span
+                                                                style={{
+                                                                    background: col + "22",
+                                                                    color: col,
+                                                                    border: `1px solid ${col}55`,
+                                                                    borderRadius: 20,
+                                                                    padding: "2px 10px",
+                                                                    fontSize: 11,
+                                                                    fontWeight: 700,
+                                                                    whiteSpace: "nowrap",
+                                                                }}
+                                                            >
+                                                                {o.estado}
                                                             </span>
                                                         </div>
+                                                        {o.descripcion && (
+                                                            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
+                                                                {o.descripcion}
+                                                            </div>
+                                                        )}
+                                                        {/* Progress bar */}
+                                                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                                            <div
+                                                                style={{
+                                                                    flex: 1,
+                                                                    height: 8,
+                                                                    background: "var(--border)",
+                                                                    borderRadius: 4,
+                                                                    overflow: "hidden",
+                                                                }}
+                                                            >
+                                                                <div
+                                                                    style={{
+                                                                        width: `${o.avance}%`,
+                                                                        height: "100%",
+                                                                        background: col,
+                                                                        borderRadius: 4,
+                                                                        transition: "width 0.3s",
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <span style={{ fontSize: 12, fontWeight: 700, color: col, minWidth: 36 }}>
+                                                                {o.avance}%
+                                                            </span>
+                                                            <button
+                                                                className="btn btn-ghost btn-sm"
+                                                                onClick={() => patchProgress(o.id, o.avance, -10)}
+                                                            >
+                                                                −10
+                                                            </button>
+                                                            <button
+                                                                className="btn btn-ghost btn-sm"
+                                                                onClick={() => patchProgress(o.id, o.avance, 10)}
+                                                            >
+                                                                +10
+                                                            </button>
+                                                            {o.avance < 100 && (
+                                                                <button
+                                                                    className="btn btn-primary btn-sm"
+                                                                    onClick={() => patchProgress(o.id, o.avance, 100 - o.avance)}
+                                                                >
+                                                                    ✓ Completar
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    <span
-                                                        style={{
-                                                            background: col + "22",
-                                                            color: col,
-                                                            border: `1px solid ${col}55`,
-                                                            borderRadius: 20,
-                                                            padding: "2px 10px",
-                                                            fontSize: 11,
-                                                            fontWeight: 700,
-                                                            whiteSpace: "nowrap",
-                                                        }}
-                                                    >
-                                                        {o.estado}
-                                                    </span>
+                                                );
+                                            })}
+                                            {!objectives.length && (
+                                                <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 32 }}>
+                                                    Sin objetivos registrados
                                                 </div>
-                                                {o.descripcion && (
-                                                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
-                                                        {o.descripcion}
-                                                    </div>
-                                                )}
-                                                {/* Progress bar */}
-                                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                                    <div
-                                                        style={{
-                                                            flex: 1,
-                                                            height: 8,
-                                                            background: "var(--border)",
-                                                            borderRadius: 4,
-                                                            overflow: "hidden",
-                                                        }}
-                                                    >
-                                                        <div
-                                                            style={{
-                                                                width: `${o.avance}%`,
-                                                                height: "100%",
-                                                                background: col,
-                                                                borderRadius: 4,
-                                                                transition: "width 0.3s",
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <span style={{ fontSize: 12, fontWeight: 700, color: col, minWidth: 36 }}>
-                                                        {o.avance}%
-                                                    </span>
-                                                    <button
-                                                        className="btn btn-ghost btn-sm"
-                                                        onClick={() => patchProgress(o.id, o.avance, -10)}
-                                                    >
-                                                        −10
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-ghost btn-sm"
-                                                        onClick={() => patchProgress(o.id, o.avance, 10)}
-                                                    >
-                                                        +10
-                                                    </button>
-                                                    {o.avance < 100 && (
-                                                        <button
-                                                            className="btn btn-primary btn-sm"
-                                                            onClick={() => patchProgress(o.id, o.avance, 100 - o.avance)}
-                                                        >
-                                                            ✓ Completar
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                    {!objectives.length && (
-                                        <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 32 }}>
-                                            Sin objetivos registrados
-                                        </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>
