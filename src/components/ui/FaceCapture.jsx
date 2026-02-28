@@ -61,7 +61,10 @@ export default function FaceCapture({ onCapture, onCancel }) {
     };
 
     return (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div
+            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+            onClick={(e) => e.stopPropagation()}
+        >
             <div style={{ background: 'var(--surface)', padding: 20, borderRadius: 12, maxWidth: 640, width: '100%', textAlign: 'center' }}>
                 <h3 style={{ marginTop: 0, marginBottom: 16 }}>Captura Facial</h3>
 
