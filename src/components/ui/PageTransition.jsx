@@ -21,17 +21,13 @@ export default function PageTransition({ children }) {
         }
     }, [location, displayLocation]);
 
-    const isAdminOrEmployee = location.pathname.startsWith('/admin') || location.pathname.startsWith('/employee');
-
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
             {/* View container */}
             <div style={{
                 animation: 'fadeIn 0.3s ease-out',
                 width: '100%',
-                height: '100%',
-                opacity: isTransitioning ? 0 : 1,
-                transition: 'opacity 0.2s ease-in-out'
+                height: '100%'
             }}>
                 {children}
             </div>
@@ -41,7 +37,7 @@ export default function PageTransition({ children }) {
                 <div style={{
                     position: 'fixed',
                     top: 0,
-                    left: isAdminOrEmployee ? 'var(--sidebar-w, 280px)' : 0,
+                    left: 0,
                     right: 0,
                     bottom: 0,
                     backgroundColor: '#ffffff',
