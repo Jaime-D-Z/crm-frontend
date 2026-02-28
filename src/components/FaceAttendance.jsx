@@ -9,6 +9,7 @@ export default function FaceAttendance({ tipo, onSuccess, onCancel }) {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [countdown, setCountdown] = useState(null);
+    const [result, setResult] = useState(null); // { success: true/false, message, similarity }
 
     useEffect(() => {
         let currentStream = null;
@@ -63,23 +64,76 @@ export default function FaceAttendance({ tipo, onSuccess, onCancel }) {
         const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
         setLoading(true);
+        setResult(null);
         try {
             const response = await api.post('/api/asistencia/facial', {
                 photo_base64: photoDataUrl,
                 tipo: tipo // 'entrada' o 'salida'
             });
 
-            toast.success(response.data.message);
+            // Success result
+            const similarity = response.data.similarity || 0;
+            const userName = response.data.userName || 'Usuario';
             
-            // Stop camera
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
+            setResult({
+                success: true,
+                userName,
+                similarity: similarity.toFixed(1),
+                message: response.data.message,
+                tipo
+            });
 
-            onSuccess(response.data);
+            toast.success(
+                `✅ ¡Rostro verificado!\n${userName} - ${similarity.toFixed(1)}%`,
+                { 
+                    duration: 4000,
+                    style: {
+                        background: '#10b981',
+                        color: 'white',
+                        fontWeight: '500',
+                        padding: '16px',
+                        borderRadius: '12px'
+                    }
+                }
+            );
+            
+            // Auto-close after 3 seconds
+            setTimeout(() => {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                onSuccess(response.data);
+            }, 3000);
+
         } catch (err) {
             const errorMsg = err.response?.data?.error || 'Error al verificar rostro';
-            toast.error(errorMsg);
+            const similarity = err.response?.data?.similarity;
+            
+            // Error result
+            setResult({
+                success: false,
+                similarity: similarity ? similarity.toFixed(1) : null,
+                message: errorMsg,
+                tipo
+            });
+
+            toast.error(
+                similarity 
+                    ? `❌ Rostro no reconocido\nSimilitud: ${similarity.toFixed(1)}% (mínimo 60%)`
+                    : `❌ ${errorMsg}`,
+                {
+                    duration: 5000,
+                    style: {
+                        background: '#ef4444',
+                        color: 'white',
+                        fontWeight: '500',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        whiteSpace: 'pre-line'
+                    }
+                }
+            );
+            
             setError(errorMsg);
         } finally {
             setLoading(false);
@@ -126,6 +180,83 @@ export default function FaceAttendance({ tipo, onSuccess, onCancel }) {
                         fontSize: '14px'
                     }}>
                         {error}
+                    </div>
+                ) : result ? (
+                    // Result Modal
+                    <div style={{
+                        padding: '32px',
+                        background: result.success ? '#f0fdf4' : '#fef2f2',
+                        borderRadius: '12px',
+                        marginBottom: '20px',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{
+                            fontSize: '64px',
+                            marginBottom: '16px'
+                        }}>
+                            {result.success ? '✅' : '❌'}
+                        </div>
+                        <h4 style={{
+                            margin: '0 0 8px 0',
+                            fontSize: '20px',
+                            fontWeight: '700',
+                            color: result.success ? '#16a34a' : '#dc2626'
+                        }}>
+                            {result.success ? '¡Rostro Verificado!' : 'Rostro No Reconocido'}
+                        </h4>
+                        {result.success && (
+                            <p style={{
+                                margin: '8px 0',
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                color: '#166534'
+                            }}>
+                                {result.userName}
+                            </p>
+                        )}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            marginTop: '12px',
+                            fontSize: '14px',
+                            color: result.success ? '#15803d' : '#991b1b'
+                        }}>
+                            <span style={{ fontWeight: '600' }}>Similitud:</span>
+                            <span style={{
+                                fontSize: '24px',
+                                fontWeight: '700'
+                            }}>
+                                {result.similarity}%
+                            </span>
+                            {!result.success && (
+                                <span style={{ fontSize: '12px', opacity: 0.8 }}>
+                                    (mínimo 60%)
+                                </span>
+                            )}
+                        </div>
+                        {result.success && (
+                            <p style={{
+                                marginTop: '16px',
+                                fontSize: '14px',
+                                color: '#166534',
+                                fontWeight: '500'
+                            }}>
+                                {result.tipo === 'entrada' ? '🟢 Entrada' : '🔴 Salida'} registrada exitosamente
+                            </p>
+                        )}
+                        {!result.success && (
+                            <p style={{
+                                marginTop: '16px',
+                                fontSize: '13px',
+                                color: '#991b1b',
+                                lineHeight: '1.5'
+                            }}>
+                                Intenta de nuevo con mejor iluminación<br />
+                                o usa el método manual
+                            </p>
+                        )}
                     </div>
                 ) : (
                     <div style={{
