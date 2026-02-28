@@ -21,12 +21,14 @@ export default function PageTransition({ children }) {
         }
     }, [location, displayLocation]);
 
+    const isAdminOrEmployee = location.pathname.startsWith('/admin') || location.pathname.startsWith('/employee');
+
     if (isTransitioning) {
         return (
             <div style={{
                 position: 'fixed',
                 top: 0,
-                left: 0,
+                left: isAdminOrEmployee ? 'var(--sidebar-w, 280px)' : 0,
                 right: 0,
                 bottom: 0,
                 backgroundColor: '#ffffff',
@@ -34,7 +36,8 @@ export default function PageTransition({ children }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 zIndex: 9999,
-                animation: 'loaderFadeIn 0.3s ease-out'
+                animation: 'loaderFadeIn 0.3s ease-out',
+                transition: 'left 0.3s ease'
             }}>
                 <LoadingSpinner size="large" text="Cargando vista..." />
             </div>
