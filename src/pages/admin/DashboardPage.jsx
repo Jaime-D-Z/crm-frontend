@@ -126,12 +126,19 @@ export default function AdminDashboardPage() {
                                     data.recent.map(e => (
                                         <div key={e.id} className="log-item" style={{ borderBottom: '1px solid var(--border)', padding: '12px 16px' }}>
                                             {e.photo_url ? (
-                                                <img src={e.photo_url} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} alt={e.name} />
-                                            ) : (
-                                                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '14px', color: 'var(--accent)', flexShrink: 0 }}>
-                                                    {e.name[0].toUpperCase()}
-                                                </div>
-                                            )}
+                                                <img 
+                                                    src={e.photo_url.startsWith('http') ? e.photo_url : `${api.defaults.baseURL}${e.photo_url}`}
+                                                    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} 
+                                                    alt={e.name}
+                                                    onError={(ev) => {
+                                                        ev.target.style.display = 'none';
+                                                        ev.target.nextSibling.style.display = 'flex';
+                                                    }}
+                                                />
+                                            ) : null}
+                                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-hover)', display: e.photo_url ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '14px', color: 'var(--accent)', flexShrink: 0 }}>
+                                                {e.name[0].toUpperCase()}
+                                            </div>
                                             <div style={{ flex: 1, marginLeft: '12px' }}>
                                                 <div style={{ fontWeight: '600', fontSize: '14px' }}>{e.name}</div>
                                                 <div style={{ fontSize: '12px', color: 'var(--text-3)' }}>{empTypeLabels[e.employee_type] || e.employee_type} · {e.department || '—'}</div>
