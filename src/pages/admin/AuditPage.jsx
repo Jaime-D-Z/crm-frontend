@@ -13,6 +13,9 @@ const ACTION_LABELS = {
     evaluation_created: { label: 'Evaluación creada', color: '#14b8a6', icon: 'star' },
     objective_created: { label: 'Objetivo creado', color: '#a855f7', icon: 'target' },
     objective_updated: { label: 'Objetivo actualizado', color: '#ec4899', icon: 'target' },
+    attendance_facial_checkin: { label: 'Entrada facial', color: '#10b981', icon: 'face-check' },
+    attendance_facial_checkout: { label: 'Salida facial', color: '#6b7280', icon: 'face-check' },
+    facial_recognition_failed: { label: 'Reconocimiento fallido', color: '#ef4444', icon: 'face-alert' },
 };
 
 export default function AuditPage() {
@@ -209,8 +212,89 @@ export default function AuditPage() {
                                                             {actionInfo.label}
                                                         </span>
                                                     </td>
-                                                    <td style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                                                        {l.details || '—'}
+                                                    <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                                                        {(() => {
+                                                            // Parse meta if it's a JSON string
+                                                            let meta = l.meta;
+                                                            if (typeof meta === 'string') {
+                                                                try {
+                                                                    meta = JSON.parse(meta);
+                                                                } catch (e) {
+                                                                    return l.details || '—';
+                                                                }
+                                                            }
+                                                            
+                                                            // Format based on action type
+                                                            switch(l.action) {
+                                                                // Facial recognition events
+                                                                case 'facial_recognition_failed':
+                                                                    if (meta?.reason === 'no_face_detected') {
+                                                                        return `No se detectó rostro en la imagen (${meta.tipo})`;
+                                                                    }
+                                                                    return `Similitud ${meta?.similarity?.toFixed(1)}% inferior al mínimo ${meta?.threshold}% (${meta?.tipo})`;
+                                                                
+                                                                case 'attendance_facial_checkin':
+                                                                    return `Entrada registrada con ${meta?.similarity?.toFixed(1)}% de similitud a las ${meta?.hora}`;
+                                                                
+                                                                case 'attendance_facial_checkout':
+                                                                    return `Salida registrada con ${meta?.similarity?.toFixed(1)}% de similitud a las ${meta?.hora}`;
+                                                                
+                                                                // Employee events
+                                                                case 'employee_created':
+                                                                    return meta?.employeeName ? `Empleado "${meta.employeeName}" creado exitosamente` : 'Nuevo empleado registrado en el sistema';
+                                                                
+                                                                case 'employee_updated':
+                                                                    return meta?.employeeName ? `Datos de "${meta.employeeName}" actualizados` : 'Información de empleado modificada';
+                                                                
+                                                                case 'employee_deleted':
+                                                                case 'employee_deactivated':
+                                                                    return meta?.employeeName ? `Empleado "${meta.employeeName}" desactivado` : 'Empleado marcado como inactivo';
+                                                                
+                                                                case 'employee_permanently_deleted':
+                                                                    return meta?.employeeName ? `Empleado "${meta.employeeName}" eliminado permanentemente` : 'Empleado eliminado de forma permanente';
+                                                                
+                                                                case 'employee_photo_updated':
+                                                                    return 'Foto de perfil actualizada';
+                                                                
+                                                                // Auth events
+                                                                case 'login':
+                                                                    return 'Acceso exitoso al sistema';
+                                                                
+                                                                case 'logout':
+                                                                    return 'Sesión cerrada correctamente';
+                                                                
+                                                                case 'login_failed':
+                                                                    return meta?.reason ? `Intento fallido: ${meta.reason}` : 'Credenciales incorrectas';
+                                                                
+                                                                case 'password_changed':
+                                                                    return 'Contraseña actualizada por el usuario';
+                                                                
+                                                                // Evaluation events
+                                                                case 'evaluation_created':
+                                                                    return meta?.employeeName ? `Evaluación creada para ${meta.employeeName}` : 'Nueva evaluación de desempeño registrada';
+                                                                
+                                                                // Objective events
+                                                                case 'objective_created':
+                                                                    return meta?.titulo ? `Objetivo "${meta.titulo}" creado` : 'Nuevo objetivo establecido';
+                                                                
+                                                                case 'objective_updated':
+                                                                    return meta?.titulo ? `Objetivo "${meta.titulo}" actualizado` : 'Objetivo modificado';
+                                                                
+                                                                // User events
+                                                                case 'user_created':
+                                                                    return meta?.userName ? `Usuario "${meta.userName}" creado` : 'Nuevo usuario registrado';
+                                                                
+                                                                case 'user_updated':
+                                                                    return meta?.userName ? `Usuario "${meta.userName}" actualizado` : 'Usuario modificado';
+                                                                
+                                                                case 'user_deleted':
+                                                                    return meta?.userName ? `Usuario "${meta.userName}" eliminado` : 'Usuario eliminado';
+                                                                
+                                                                // Default
+                                                                default:
+                                                                    return l.details || 'Acción registrada en el sistema';
+                                                            }
+                                                        })()}
                                                     </td>
                                                     <td style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-2)' }}>
                                                         {l.ip}
