@@ -159,7 +159,31 @@ export default function Sidebar() {
       <div className="sidebar-footer">
         <div className="sidebar-user">
           <div className="sidebar-avatar">
-            {user?.userName?.[0]?.toUpperCase() || "U"}
+            {user?.photoUrl ? (
+              <img 
+                src={user.photoUrl.startsWith('http') ? user.photoUrl : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${user.photoUrl}`}
+                alt={user?.userName || "Usuario"}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '50%'
+                }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div style={{ 
+              display: user?.photoUrl ? 'none' : 'flex',
+              width: '100%',
+              height: '100%',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {user?.userName?.[0]?.toUpperCase() || "U"}
+            </div>
           </div>
           <div className="sidebar-user-info">
             <div className="sidebar-user-name">
