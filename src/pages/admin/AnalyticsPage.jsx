@@ -1,53 +1,11 @@
 import { useEffect, useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import api from '../../api/api';
-
-/**
- * Helper to generate SVG Area Chart Path
- */
-const generateAreaPath = (data, width, height) => {
-    if (!data || data.length < 2) return '';
-    const maxVal = Math.max(...data.map(d => d.visits), 10);
-    const points = data.map((d, i) => {
-        const x = (i / (data.length - 1)) * width;
-        const y = height - (d.visits / maxVal) * height;
-        return { x, y };
-    });
-
-    let path = `M 0 ${height}`;
-    points.forEach((p, i) => {
-        if (i === 0) path += ` L ${p.x} ${p.y}`;
-        else {
-            // Cubic bezier for smoothness
-            const prev = points[i - 1];
-            const cx = (prev.x + p.x) / 2;
-            path += ` C ${cx} ${prev.y}, ${cx} ${p.y}, ${p.x} ${p.y}`;
-        }
-    });
-    path += ` L ${width} ${height} Z`;
-    return path;
-};
-
-const generateLinePath = (data, width, height) => {
-    if (!data || data.length < 2) return '';
-    const maxVal = Math.max(...data.map(d => d.visits), 10);
-    const points = data.map((d, i) => {
-        const x = (i / (data.length - 1)) * width;
-        const y = height - (d.visits / maxVal) * height;
-        return { x, y };
-    });
-
-    let path = '';
-    points.forEach((p, i) => {
-        if (i === 0) path += `M ${p.x} ${p.y}`;
-        else {
-            const prev = points[i - 1];
-            const cx = (prev.x + p.x) / 2;
-            path += ` C ${cx} ${prev.y}, ${cx} ${p.y}, ${p.x} ${p.y}`;
-        }
-    });
-    return path;
-};
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+    PieChart, Pie, Cell,
+    BarChart, Bar
+} from 'recharts';
 
 export default function AnalyticsPage() {
     const [stats, setStats] = useState(null);
@@ -143,53 +101,52 @@ export default function AnalyticsPage() {
                                 </div>
                             </div>
                             <div className="section-body" style={{ padding: '24px' }}>
-                                <div style={{ height: '240px', position: 'relative', display: 'flex', gap: '12px' }}>
-                                    {/* Y-axis labels */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: '0', paddingBottom: '0', minWidth: '40px' }}>
-                                        {traffic.length > 0 && (() => {
-                                            const maxVisits = Math.max(...traffic.map(t => t.visits), 1);
-                                            return [3, 2, 1, 0].map(i => (
-                                                <span key={i} style={{ fontSize: '11px', color: 'var(--text-3)', textAlign: 'right' }}>
-                                                    {Math.round((maxVisits / 3) * i)}
-                                                </span>
-                                            ));
-                                        })()}
-                                    </div>
-                                    {/* Chart */}
-                                    <div style={{ flex: 1, position: 'relative' }}>
-                                        <svg width="100%" height="100%" viewBox="0 0 800 240" preserveAspectRatio="none">
-                                            <defs>
-                                                <linearGradient id="trafficGradient" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.2" />
-                                                    <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
-                                                </linearGradient>
-                                            </defs>
-                                            {/* Grid lines */}
-                                            {[0, 1, 2, 3].map(i => (
-                                                <line key={i} x1="0" y1={i * 80} x2="800" y2={i * 80} stroke="var(--border)" strokeWidth="1" strokeDasharray="4 4" />
-                                            ))}
-                                            {/* Paths */}
-                                            {traffic.length > 0 && (
-                                                <>
-                                                    <path d={generateAreaPath(traffic, 800, 240)} fill="url(#trafficGradient)" />
-                                                    <path d={generateLinePath(traffic, 800, 240)} fill="none" stroke="var(--accent)" strokeWidth="3" />
-                                                    {/* Dots on points */}
-                                                    {traffic.map((d, i) => {
-                                                        const x = (i / (traffic.length - 1)) * 800;
-                                                        const y = 240 - (d.visits / Math.max(...traffic.map(t => t.visits), 1) * 240);
-                                                        return <circle key={i} cx={x} cy={y} r="4" fill="white" stroke="var(--accent)" strokeWidth="2" />;
-                                                    })}
-                                                </>
-                                            )}
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '12px', marginLeft: '52px', color: 'var(--text-3)', fontSize: '11px' }}>
-                                    {traffic.map((d, i) => (
-                                        <span key={i} style={{ textAlign: 'center', minWidth: '40px' }}>
-                                            {new Date(d.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
-                                        </span>
-                                    ))}
+                                <div style={{ height: '280px', width: '100%' }}>
+                                    {traffic.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={traffic} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                <defs>
+                                                    <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.4} />
+                                                        <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                                <XAxis
+                                                    dataKey="date"
+                                                    tickFormatter={(tick) => new Date(tick).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                                                    stroke="var(--text-3)"
+                                                    fontSize={12}
+                                                    tickLine={false}
+                                                    axisLine={false}
+                                                />
+                                                <YAxis
+                                                    stroke="var(--text-3)"
+                                                    fontSize={12}
+                                                    tickLine={false}
+                                                    axisLine={false}
+                                                />
+                                                <RechartsTooltip
+                                                    contentStyle={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                                                    itemStyle={{ color: 'var(--accent)' }}
+                                                    labelFormatter={(label) => new Date(label).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                                />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="visits"
+                                                    name="Vistas"
+                                                    stroke="var(--accent)"
+                                                    strokeWidth={3}
+                                                    fillOpacity={1}
+                                                    fill="url(#colorVisits)"
+                                                />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)' }}>
+                                            Sin datos de tráfico
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -203,34 +160,36 @@ export default function AnalyticsPage() {
                                 </div>
                             </div>
                             <div className="section-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px' }}>
-                                <div style={{ position: 'relative', width: '160px', height: '160px' }}>
-                                    <svg width="160" height="160" viewBox="0 0 36 36">
-                                        <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--bg-hover)" strokeWidth="4"></circle>
-                                        {devices.reduce((acc, curr, idx) => {
-                                            const total = devices.reduce((sum, d) => sum + Number(d.total), 0);
-                                            const percentage = total > 0 ? (Number(curr.total) / total) * 100 : 0;
-                                            const offset = acc.offset;
-                                            acc.elements.push(
-                                                <circle
-                                                    key={idx}
-                                                    cx="18" cy="18" r="15.915"
-                                                    fill="none"
-                                                    stroke={colors[idx % colors.length]}
-                                                    strokeWidth="4"
-                                                    strokeDasharray={`${percentage} ${100 - percentage}`}
-                                                    strokeDashoffset={100 - offset + 25}
-                                                    className="chart-segment"
-                                                />
-                                            );
-                                            acc.offset += percentage;
-                                            return acc;
-                                        }, { elements: [], offset: 0 }).elements}
-                                    </svg>
-                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text)' }}>
+                                <div style={{ width: '100%', height: '220px', position: 'relative' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={devices}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={65}
+                                                outerRadius={90}
+                                                paddingAngle={5}
+                                                dataKey="total"
+                                                nameKey="device_type"
+                                                stroke="none"
+                                            >
+                                                {devices.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                                                ))}
+                                            </Pie>
+                                            <RechartsTooltip
+                                                contentStyle={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                                                itemStyle={{ color: 'var(--text)' }}
+                                                formatter={(value, name) => [value, name.charAt(0).toUpperCase() + name.slice(1)]}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                                        <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text)' }}>
                                             {devices.reduce((sum, d) => sum + Number(d.total), 0)}
                                         </div>
-                                        <div style={{ fontSize: '10px', color: 'var(--text-3)', textTransform: 'uppercase' }}>Sesiones</div>
+                                        <div style={{ fontSize: '11px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '1px' }}>Sesiones</div>
                                     </div>
                                 </div>
                                 <div style={{ width: '100%', marginTop: '24px' }}>
@@ -304,29 +263,46 @@ export default function AnalyticsPage() {
                                 </div>
                             </div>
                             <div className="section-body" style={{ padding: '24px' }}>
-                                <div style={{ height: '180px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '15px' }}>
+                                <div style={{ height: '240px', width: '100%' }}>
                                     {ventasEvolutivo.length === 0 ? (
-                                        <div style={{ width: '100%', textAlign: 'center', color: 'var(--text-3)' }}>Sin datos históricos</div>
+                                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)' }}>
+                                            Sin datos históricos
+                                        </div>
                                     ) : (
-                                        ventasEvolutivo.map((m, i) => {
-                                            const maxV = Math.max(...ventasEvolutivo.map(x => x.cerradas), 1);
-                                            const heightPerc = (m.cerradas / maxV) * 100;
-                                            return (
-                                                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                                    <div style={{
-                                                        width: '100%',
-                                                        background: 'var(--accent)',
-                                                        height: `${heightPerc}%`,
-                                                        borderRadius: '4px 4px 0 0',
-                                                        position: 'relative',
-                                                        transition: 'height 1s ease'
-                                                    }}>
-                                                        <div className="tooltip">${Math.round(m.cerradas)}</div>
-                                                    </div>
-                                                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-3)' }}>{m.mes.split('-')[1]}/{m.mes.split('-')[0].slice(2)}</span>
-                                                </div>
-                                            );
-                                        })
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={ventasEvolutivo} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                                <XAxis
+                                                    dataKey="mes"
+                                                    tickFormatter={(tick) => { const parts = tick.split('-'); return `${parts[1]}/${parts[0].slice(2)}`; }}
+                                                    stroke="var(--text-3)"
+                                                    fontSize={12}
+                                                    tickLine={false}
+                                                    axisLine={false}
+                                                />
+                                                <YAxis
+                                                    stroke="var(--text-3)"
+                                                    fontSize={12}
+                                                    tickLine={false}
+                                                    axisLine={false}
+                                                    tickFormatter={(value) => `$${value >= 1000 ? (value / 1000) + 'k' : value}`}
+                                                />
+                                                <RechartsTooltip
+                                                    cursor={{ fill: 'var(--border)', opacity: 0.4 }}
+                                                    contentStyle={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                                                    itemStyle={{ color: 'var(--accent)', fontWeight: 'bold' }}
+                                                    formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Ventas Cerradas']}
+                                                    labelFormatter={(label) => `Mes: ${label}`}
+                                                />
+                                                <Bar
+                                                    dataKey="cerradas"
+                                                    name="Ventas Cerradas"
+                                                    fill="var(--accent)"
+                                                    radius={[6, 6, 0, 0]}
+                                                    barSize={40}
+                                                />
+                                            </BarChart>
+                                        </ResponsiveContainer>
                                     )}
                                 </div>
                             </div>
