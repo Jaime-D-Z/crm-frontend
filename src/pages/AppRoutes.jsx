@@ -1,3 +1,4 @@
+import { useAnalyticsTracking } from "../hooks/useAnalyticsTracking";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
 import GlobalSocketListener from "../components/GlobalSocketListener";
