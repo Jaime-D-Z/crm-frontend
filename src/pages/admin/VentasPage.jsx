@@ -12,6 +12,7 @@ export default function VentasPage() {
     const [analyticsStats, setAnalyticsStats] = useState(null);
     const [topProductos, setTopProductos] = useState([]);
     const [usuariosUnicos, setUsuariosUnicos] = useState([]);
+    const [checkoutFunnel, setCheckoutFunnel] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
@@ -41,14 +42,16 @@ export default function VentasPage() {
                 setProductos(p.data.productos || []);
                 setStats(s.data.stats);
             } else {
-                const [a, t, u] = await Promise.all([
+                const [a, t, u, f] = await Promise.all([
                     api.get('/api/eventos/stats'),
                     api.get('/api/eventos/top-productos?limit=10'),
-                    api.get('/api/eventos/usuarios-unicos')
+                    api.get('/api/eventos/usuarios-unicos'),
+                    api.get('/api/eventos/checkout-funnel')
                 ]);
                 setAnalyticsStats(a.data.stats);
                 setTopProductos(t.data.productos || []);
                 setUsuariosUnicos(u.data.usuarios || []);
+                setCheckoutFunnel(f.data.funnel);
             }
         } catch (err) {
             console.error('Error loading data:', err);
@@ -469,6 +472,130 @@ export default function VentasPage() {
                                     </table>
                                 </div>
                             </div>
+
+                            {/* Funnel de Checkout */}
+                            {checkoutFunnel && (
+                                <div className="section-card">
+                                    <div className="section-header">
+                                        <div>
+                                            <div className="section-title">🛒 Funnel de Conversión</div>
+                                            <div className="section-subtitle">Análisis del proceso de compra</div>
+                                        </div>
+                                    </div>
+                                    <div className="section-body">
+                                        <div className="funnel-container">
+                                            <div className="funnel-step">
+                                                <div className="funnel-bar" style={{ width: '100%', background: '#4f8ef7' }}>
+                                                    <div className="funnel-content">
+                                                        <div className="funnel-icon">🛍️</div>
+                                                        <div className="funnel-info">
+                                                            <div className="funnel-label">Productos Agregados</div>
+                                                            <div className="funnel-value">{checkoutFunnel.agregados_carrito}</div>
+                                                        </div>
+                                                        <div className="funnel-percent">100%</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="funnel-step">
+                                                <div className="funnel-bar" style={{ 
+                                                    width: checkoutFunnel.agregados_carrito > 0 
+                                                        ? `${(checkoutFunnel.checkout_iniciado / checkoutFunnel.agregados_carrito * 100)}%` 
+                                                        : '0%',
+                                                    background: '#8b5cf6'
+                                                }}>
+                                                    <div className="funnel-content">
+                                                        <div className="funnel-icon">🚀</div>
+                                                        <div className="funnel-info">
+                                                            <div className="funnel-label">Checkout Iniciado</div>
+                                                            <div className="funnel-value">{checkoutFunnel.checkout_iniciado}</div>
+                                                        </div>
+                                                        <div className="funnel-percent">{checkoutFunnel.tasa_inicio}%</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="funnel-step">
+                                                <div className="funnel-bar" style={{ 
+                                                    width: checkoutFunnel.agregados_carrito > 0 
+                                                        ? `${(checkoutFunnel.paso_1_completado / checkoutFunnel.agregados_carrito * 100)}%` 
+                                                        : '0%',
+                                                    background: '#10b981'
+                                                }}>
+                                                    <div className="funnel-content">
+                                                        <div className="funnel-icon">📝</div>
+                                                        <div className="funnel-info">
+                                                            <div className="funnel-label">Información Completada</div>
+                                                            <div className="funnel-value">{checkoutFunnel.paso_1_completado}</div>
+                                                        </div>
+                                                        <div className="funnel-percent">
+                                                            {checkoutFunnel.checkout_iniciado > 0 
+                                                                ? ((checkoutFunnel.paso_1_completado / checkoutFunnel.checkout_iniciado * 100).toFixed(1))
+                                                                : 0}%
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="funnel-step">
+                                                <div className="funnel-bar" style={{ 
+                                                    width: checkoutFunnel.agregados_carrito > 0 
+                                                        ? `${(checkoutFunnel.compras_completadas / checkoutFunnel.agregados_carrito * 100)}%` 
+                                                        : '0%',
+                                                    background: '#059669'
+                                                }}>
+                                                    <div className="funnel-content">
+                                                        <div className="funnel-icon">✅</div>
+                                                        <div className="funnel-info">
+                                                            <div className="funnel-label">Compras Completadas</div>
+                                                            <div className="funnel-value">{checkoutFunnel.compras_completadas}</div>
+                                                        </div>
+                                                        <div className="funnel-percent">{checkoutFunnel.tasa_completado}%</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="funnel-step abandoned">
+                                                <div className="funnel-bar" style={{ 
+                                                    width: checkoutFunnel.agregados_carrito > 0 
+                                                        ? `${(checkoutFunnel.checkout_abandonado / checkoutFunnel.agregados_carrito * 100)}%` 
+                                                        : '0%',
+                                                    background: '#ef4444'
+                                                }}>
+                                                    <div className="funnel-content">
+                                                        <div className="funnel-icon">❌</div>
+                                                        <div className="funnel-info">
+                                                            <div className="funnel-label">Checkout Abandonado</div>
+                                                            <div className="funnel-value">{checkoutFunnel.checkout_abandonado}</div>
+                                                        </div>
+                                                        <div className="funnel-percent">{checkoutFunnel.tasa_abandono}%</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="funnel-insights">
+                                            <div className="insight-card">
+                                                <div className="insight-icon" style={{ background: '#10b981' }}>📈</div>
+                                                <div className="insight-content">
+                                                    <div className="insight-label">Tasa de Conversión</div>
+                                                    <div className="insight-value">{checkoutFunnel.tasa_completado}%</div>
+                                                </div>
+                                            </div>
+                                            <div className="insight-card">
+                                                <div className="insight-icon" style={{ background: '#ef4444' }}>📉</div>
+                                                <div className="insight-content">
+                                                    <div className="insight-label">Tasa de Abandono</div>
+                                                    <div className="insight-value">{checkoutFunnel.tasa_abandono}%</div>
+                                                </div>
+                                            </div>
+                                            <div className="insight-card">
+                                                <div className="insight-icon" style={{ background: '#4f8ef7' }}>💰</div>
+                                                <div className="insight-content">
+                                                    <div className="insight-label">Oportunidades Perdidas</div>
+                                                    <div className="insight-value">{checkoutFunnel.checkout_abandonado}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Gráficos */}
                             <div className="stats-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>

@@ -140,11 +140,34 @@ export default function TiendaPage() {
         setShowCart(false);
         setShowCheckout(true);
         setCheckoutStep(1);
+        trackEvent('checkout_iniciado', null, { 
+            items_count: cart.length,
+            total: getTotalCart()
+        });
     };
 
     const handleCheckoutInputChange = (e) => {
         const { name, value } = e.target;
         setCheckoutData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleCheckoutStepChange = (newStep) => {
+        if (newStep === 2) {
+            trackEvent('checkout_paso_1_completado', null, {
+                nombre: checkoutData.nombre,
+                email: checkoutData.email
+            });
+        }
+        setCheckoutStep(newStep);
+    };
+
+    const handleCheckoutClose = () => {
+        trackEvent('checkout_abandonado', null, {
+            step: checkoutStep,
+            items_count: cart.length,
+            total: getTotalCart()
+        });
+        setShowCheckout(false);
     };
 
     const formatCardNumber = (value) => {
@@ -292,6 +315,30 @@ export default function TiendaPage() {
                 <div className="hero-content">
                     <h2>Descubre Nuestros Productos</h2>
                     <p>Calidad y excelencia en cada detalle</p>
+                </div>
+                
+                {/* Hero Stats */}
+                <div className="hero-stats">
+                    <div className="hero-stat-card">
+                        <div className="hero-stat-icon">🚚</div>
+                        <div className="hero-stat-value">Gratis</div>
+                        <div className="hero-stat-label">Envío en compras +$500</div>
+                    </div>
+                    <div className="hero-stat-card">
+                        <div className="hero-stat-icon">🔒</div>
+                        <div className="hero-stat-value">100%</div>
+                        <div className="hero-stat-label">Pago Seguro</div>
+                    </div>
+                    <div className="hero-stat-card">
+                        <div className="hero-stat-icon">⭐</div>
+                        <div className="hero-stat-value">{productos.length}+</div>
+                        <div className="hero-stat-label">Productos Disponibles</div>
+                    </div>
+                    <div className="hero-stat-card">
+                        <div className="hero-stat-icon">💳</div>
+                        <div className="hero-stat-value">Fácil</div>
+                        <div className="hero-stat-label">Proceso de Compra</div>
+                    </div>
                 </div>
             </section>
 
@@ -539,9 +586,39 @@ export default function TiendaPage() {
 
             {/* Modal de Checkout */}
             {showCheckout && (
-                <div className="modal-overlay-tienda checkout-overlay" onClick={() => setShowCheckout(false)}>
+                <div className="modal-overlay-tienda checkout-overlay" onClick={handleCheckoutClose}>
                     <div className="modal-checkout" onClick={(e) => e.stopPropagation()}>
-                        <button className="modal-close" onClick={() => setShowCheckout(false)}>&times;</button>
+                        <button className="modal-close" onClick={handleCheckoutClose}>&times;</button>
+                        
+                        {/* Progress Bar */}
+                        <div className="checkout-progress">
+                            <div className={`progress-step ${checkoutStep >= 1 ? 'active' : ''} ${checkoutStep > 1 ? 'completed' : ''}`}>
+                                <div className="progress-circle">
+                                    {checkoutStep > 1 ? (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    ) : '1'}
+                                </div>
+                                <span>Información</span>
+                            </div>
+                            <div className="progress-line"></div>
+                            <div className={`progress-step ${checkoutStep >= 2 ? 'active' : ''} ${checkoutStep > 2 ? 'completed' : ''}`}>
+                                <div className="progress-circle">
+                                    {checkoutStep > 2 ? (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    ) : '2'}
+                                </div>
+                                <span>Pago</span>
+                            </div>
+                            <div className="progress-line"></div>
+                            <div className={`progress-step ${checkoutStep >= 3 ? 'active' : ''}`}>
+                                <div className="progress-circle">3</div>
+                                <span>Confirmación</span>
+                            </div>
+                        </div>
                         
                         {checkoutStep === 1 && (
                             <div className="checkout-step">
@@ -627,7 +704,7 @@ export default function TiendaPage() {
                                             placeholder="06600"
                                         />
                                     </div>
-                                    <button className="btn-next-step" onClick={() => setCheckoutStep(2)}>
+                                    <button className="btn-next-step" onClick={() => handleCheckoutStepChange(2)}>
                                         Continuar al Pago
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -836,6 +913,98 @@ export default function TiendaPage() {
                     </div>
                 </div>
             )}
+
+            {/* Trust Badges Section */}
+            <section className="trust-section">
+                <div className="trust-grid">
+                    <div className="trust-badge">
+                        <div className="trust-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                        </div>
+                        <div className="trust-title">Pago Seguro</div>
+                        <div className="trust-description">Tus datos están protegidos con encriptación SSL</div>
+                    </div>
+                    <div className="trust-badge">
+                        <div className="trust-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div className="trust-title">Envío Rápido</div>
+                        <div className="trust-description">Entrega en 3-5 días hábiles a todo el país</div>
+                    </div>
+                    <div className="trust-badge">
+                        <div className="trust-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                        </div>
+                        <div className="trust-title">Garantía</div>
+                        <div className="trust-description">30 días de garantía en todos los productos</div>
+                    </div>
+                    <div className="trust-badge">
+                        <div className="trust-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <div className="trust-title">Soporte 24/7</div>
+                        <div className="trust-description">Atención al cliente siempre disponible</div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Testimonials Section */}
+            <section className="testimonials-section">
+                <div className="testimonials-container">
+                    <h2 className="testimonials-title">Lo que dicen nuestros clientes</h2>
+                    <div className="testimonials-grid">
+                        <div className="testimonial-card">
+                            <div className="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                            <p className="testimonial-text">
+                                "Excelente servicio y productos de calidad. La entrega fue rápida y el proceso de compra muy sencillo."
+                            </p>
+                            <div className="testimonial-author">
+                                <div className="testimonial-avatar">MR</div>
+                                <div className="testimonial-info">
+                                    <div className="testimonial-name">María Rodríguez</div>
+                                    <div className="testimonial-role">Cliente Verificado</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="testimonial-card">
+                            <div className="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                            <p className="testimonial-text">
+                                "Me encantó la variedad de productos y los precios son muy competitivos. Definitivamente volveré a comprar."
+                            </p>
+                            <div className="testimonial-author">
+                                <div className="testimonial-avatar">JL</div>
+                                <div className="testimonial-info">
+                                    <div className="testimonial-name">Juan López</div>
+                                    <div className="testimonial-role">Cliente Frecuente</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="testimonial-card">
+                            <div className="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                            <p className="testimonial-text">
+                                "El mejor lugar para comprar online. Atención al cliente excepcional y productos originales."
+                            </p>
+                            <div className="testimonial-author">
+                                <div className="testimonial-avatar">AG</div>
+                                <div className="testimonial-info">
+                                    <div className="testimonial-name">Ana García</div>
+                                    <div className="testimonial-role">Cliente Satisfecho</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <footer className="tienda-footer">
                 <p>&copy; 2026 CRM System. Todos los derechos reservados.</p>
