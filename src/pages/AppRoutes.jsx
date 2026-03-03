@@ -6,6 +6,7 @@ import GlobalSocketListener from "../components/GlobalSocketListener";
 import LoginPage from "./LoginPage";
 import ChangePasswordPage from "./ChangePasswordPage";
 import ForgotPasswordPage from "./ForgotPasswordPage";
+import TiendaPage from "./public/TiendaPage";
 
 import AdminDashboardPage from "./admin/DashboardPage";
 import EmployeesPage from "./admin/EmployeesPage";
@@ -38,6 +39,7 @@ export default function AppRoutes() {
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/tienda" element={<TiendaPage />} />
 
         {/* Auth-required — any role */}
         <Route
