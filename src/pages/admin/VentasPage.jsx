@@ -12,6 +12,8 @@ export default function VentasPage() {
     const [analyticsStats, setAnalyticsStats] = useState(null);
     const [topProductos, setTopProductos] = useState([]);
     const [usuariosUnicos, setUsuariosUnicos] = useState([]);
+    const [clientesPotenciales, setClientesPotenciales] = useState([]);
+    const [potencialesStats, setPotencialesStats] = useState({ total: 0, por_nivel: { alto: 0, medio: 0, bajo: 0 } });
     const [checkoutFunnel, setCheckoutFunnel] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -42,15 +44,21 @@ export default function VentasPage() {
                 setProductos(p.data.productos || []);
                 setStats(s.data.stats);
             } else {
-                const [a, t, u, f] = await Promise.all([
+                const [a, t, u, cp, f] = await Promise.all([
                     api.get('/api/eventos/stats'),
                     api.get('/api/eventos/top-productos?limit=10'),
                     api.get('/api/eventos/usuarios-unicos'),
+                    api.get('/api/eventos/clientes-potenciales'),
                     api.get('/api/eventos/checkout-funnel')
                 ]);
                 setAnalyticsStats(a.data.stats);
                 setTopProductos(t.data.productos || []);
                 setUsuariosUnicos(u.data.usuarios || []);
+                setClientesPotenciales(cp.data.clientes_potenciales || []);
+                setPotencialesStats({
+                    total: cp.data.total || 0,
+                    por_nivel: cp.data.por_nivel || { alto: 0, medio: 0, bajo: 0 }
+                });
                 setCheckoutFunnel(f.data.funnel);
             }
         } catch (err) {
@@ -305,9 +313,13 @@ export default function VentasPage() {
                                 <div className="stat-card">
                                     <div className="stat-label">Clientes Potenciales</div>
                                     <div className="stat-value" style={{ color: '#f59e0b' }}>
-                                        {usuariosUnicos.filter(u => u.contactos === 0 && (u.productos_vistos >= 2 || u.total_eventos >= 5)).length}
+                                        {potencialesStats.total}
                                     </div>
-                                    <div className="stat-sub">🔥 Prospectos calientes</div>
+                                    <div className="stat-sub">
+                                        🔴 {potencialesStats.por_nivel.alto} Alto | 
+                                        🟠 {potencialesStats.por_nivel.medio} Medio | 
+                                        🟢 {potencialesStats.por_nivel.bajo} Bajo
+                                    </div>
                                     <svg className="stat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
                                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                         <circle cx="9" cy="7" r="4"></circle>
@@ -389,8 +401,8 @@ export default function VentasPage() {
                             <div className="section-card">
                                 <div className="section-header">
                                     <div>
-                                        <div className="section-title">🎯 Clientes Potenciales</div>
-                                        <div className="section-subtitle">Usuarios con alto interés sin conversión</div>
+                                        <div className="section-title">🎯 Clientes Potenciales (Lead Scoring)</div>
+                                        <div className="section-subtitle">Usuarios con alto interés sin conversión - Ordenados por prioridad</div>
                                     </div>
                                 </div>
                                 <div className="section-body" style={{ padding: '0' }}>
@@ -399,88 +411,116 @@ export default function VentasPage() {
                                             <tr>
                                                 <th>IP</th>
                                                 <th>Dispositivo</th>
-                                                <th>Interés</th>
-                                                <th>Productos Vistos</th>
+                                                <th>Lead Score</th>
+                                                <th>Nivel Interés</th>
+                                                <th>Productos</th>
+                                                <th>Eventos</th>
                                                 <th>Última Actividad</th>
-                                                <th>Estado</th>
+                                                <th>Acción</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {usuariosUnicos.length === 0 ? (
+                                            {clientesPotenciales.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan="6">
+                                                    <td colSpan="8">
                                                         <div className="empty-state" style={{ padding: '60px 0' }}>
-                                                            <div style={{ color: 'var(--text-3)' }}>No hay clientes potenciales detectados</div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ) : (
-                                                usuariosUnicos
-                                                    .filter(u => u.contactos === 0 && (u.productos_vistos >= 2 || u.total_eventos >= 5))
-                                                    .map((usuario, idx) => {
-                                                        const nivelInteres = usuario.productos_vistos >= 5 ? 'Alto' : 
-                                                                           usuario.productos_vistos >= 3 ? 'Medio' : 'Bajo';
-                                                        const colorInteres = nivelInteres === 'Alto' ? '#ef4444' : 
-                                                                           nivelInteres === 'Medio' ? '#f59e0b' : '#10b981';
-                                                        return (
-                                                            <tr key={usuario.session_id}>
-                                                                <td>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                        <div style={{ 
-                                                                            width: '8px', 
-                                                                            height: '8px', 
-                                                                            borderRadius: '50%', 
-                                                                            background: colorInteres
-                                                                        }}></div>
-                                                                        <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '600' }}>{usuario.ip}</span>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <span className={`badge ${
-                                                                        usuario.device_type === 'mobile' ? 'badge-blue' : 
-                                                                        usuario.device_type === 'tablet' ? 'badge-purple' : 
-                                                                        'badge-gray'
-                                                                    }`}>
-                                                                        {usuario.device_type}
-                                                                    </span>
-                                                                </td>
-                                                                <td>
-                                                                    <span className={`badge ${
-                                                                        nivelInteres === 'Alto' ? 'badge-red' : 
-                                                                        nivelInteres === 'Medio' ? 'badge-orange' : 
-                                                                        'badge-green'
-                                                                    }`}>
-                                                                        {nivelInteres}
-                                                                    </span>
-                                                                </td>
-                                                                <td><span className="badge badge-purple">{usuario.productos_vistos}</span></td>
-                                                                <td style={{ fontSize: '12px', color: 'var(--text-2)' }}>
-                                                                    {new Date(usuario.ultima_actividad).toLocaleString('es', { 
-                                                                        day: '2-digit', 
-                                                                        month: 'short', 
-                                                                        hour: '2-digit', 
-                                                                        minute: '2-digit' 
-                                                                    })}
-                                                                </td>
-                                                                <td>
-                                                                    <span className="badge badge-orange">
-                                                                        🔥 Prospecto Caliente
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })
-                                            )}
-                                            {usuariosUnicos.filter(u => u.contactos === 0 && (u.productos_vistos >= 2 || u.total_eventos >= 5)).length === 0 && usuariosUnicos.length > 0 && (
-                                                <tr>
-                                                    <td colSpan="6">
-                                                        <div className="empty-state" style={{ padding: '40px 0' }}>
                                                             <div style={{ color: 'var(--text-3)' }}>
-                                                                ✅ Todos los usuarios con interés han sido contactados
+                                                                {usuariosUnicos.length === 0 
+                                                                    ? '📊 No hay datos de usuarios aún. Los clientes potenciales aparecerán cuando haya actividad en la tienda.'
+                                                                    : '✅ Todos los usuarios con interés han sido contactados o no cumplen los criterios mínimos.'
+                                                                }
                                                             </div>
                                                         </div>
                                                     </td>
                                                 </tr>
+                                            ) : (
+                                                clientesPotenciales.map((cliente, idx) => {
+                                                    const colorInteres = cliente.nivel_interes === 'Alto' ? '#ef4444' : 
+                                                                       cliente.nivel_interes === 'Medio' ? '#f59e0b' : '#10b981';
+                                                    const badgeClass = cliente.nivel_interes === 'Alto' ? 'badge-red' : 
+                                                                      cliente.nivel_interes === 'Medio' ? 'badge-orange' : 'badge-green';
+                                                    
+                                                    return (
+                                                        <tr key={cliente.session_id} style={{ 
+                                                            background: idx < 3 ? 'rgba(239, 68, 68, 0.05)' : 'transparent' 
+                                                        }}>
+                                                            <td>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <div style={{ 
+                                                                        width: '8px', 
+                                                                        height: '8px', 
+                                                                        borderRadius: '50%', 
+                                                                        background: colorInteres
+                                                                    }}></div>
+                                                                    <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '600' }}>
+                                                                        {cliente.ip}
+                                                                    </span>
+                                                                    {idx < 3 && <span style={{ fontSize: '10px' }}>🔥</span>}
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span className={`badge ${
+                                                                    cliente.device_type === 'mobile' ? 'badge-blue' : 
+                                                                    cliente.device_type === 'tablet' ? 'badge-purple' : 
+                                                                    'badge-gray'
+                                                                }`}>
+                                                                    {cliente.device_type}
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <div style={{ 
+                                                                        width: '60px', 
+                                                                        height: '6px', 
+                                                                        background: 'var(--bg-2)', 
+                                                                        borderRadius: '3px',
+                                                                        overflow: 'hidden'
+                                                                    }}>
+                                                                        <div style={{ 
+                                                                            width: `${Math.min(cliente.lead_score, 100)}%`, 
+                                                                            height: '100%', 
+                                                                            background: colorInteres 
+                                                                        }}></div>
+                                                                    </div>
+                                                                    <span style={{ fontSize: '12px', fontWeight: '700', color: colorInteres }}>
+                                                                        {cliente.lead_score}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span className={`badge ${badgeClass}`}>
+                                                                    {cliente.nivel_interes}
+                                                                </span>
+                                                            </td>
+                                                            <td><span className="badge badge-purple">{cliente.productos_vistos}</span></td>
+                                                            <td><span className="badge badge-blue">{cliente.total_eventos}</span></td>
+                                                            <td style={{ fontSize: '12px', color: 'var(--text-2)' }}>
+                                                                {new Date(cliente.ultima_actividad).toLocaleString('es', { 
+                                                                    day: '2-digit', 
+                                                                    month: 'short', 
+                                                                    hour: '2-digit', 
+                                                                    minute: '2-digit' 
+                                                                })}
+                                                                {cliente.dias_inactivo > 0 && (
+                                                                    <div style={{ fontSize: '10px', color: 'var(--text-3)' }}>
+                                                                        Hace {cliente.dias_inactivo} día{cliente.dias_inactivo !== 1 ? 's' : ''}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                            <td>
+                                                                <button 
+                                                                    className="btn btn-sm btn-primary"
+                                                                    onClick={() => {
+                                                                        showToast(`Seguimiento iniciado para ${cliente.ip}`, 'info');
+                                                                    }}
+                                                                    style={{ fontSize: '11px', padding: '4px 8px' }}
+                                                                >
+                                                                    📞 Contactar
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
                                             )}
                                         </tbody>
                                     </table>
