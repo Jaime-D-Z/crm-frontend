@@ -17,6 +17,8 @@ export default function VentasPage() {
     const [checkoutFunnel, setCheckoutFunnel] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [lastUpdate, setLastUpdate] = useState(null);
     const [editingProduct, setEditingProduct] = useState(null);
     const [form, setForm] = useState({
         nombre: '',
@@ -32,10 +34,28 @@ export default function VentasPage() {
 
     useEffect(() => {
         fetchData();
+        
+        // Auto-refresh cada 30 segundos solo en tab de analytics
+        let interval;
+        if (activeTab === 'analytics') {
+            interval = setInterval(() => {
+                fetchData(true); // true = silent refresh
+            }, 30000); // 30 segundos
+        }
+        
+        return () => {
+            if (interval) clearInterval(interval);
+        };
     }, [activeTab]);
 
-    const fetchData = async () => {
+    const fetchData = async (silent = false) => {
         try {
+            if (!silent) {
+                setLoading(true);
+            } else {
+                setRefreshing(true);
+            }
+            
             if (activeTab === 'productos') {
                 const [p, s] = await Promise.all([
                     api.get('/api/productos'),
@@ -61,8 +81,16 @@ export default function VentasPage() {
                 });
                 setCheckoutFunnel(f.data.funnel);
             }
+            
+            setLastUpdate(new Date());
         } catch (err) {
             console.error('Error loading data:', err);
+            if (!silent) {
+                showToast('Error al cargar datos', 'error');
+            }
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -137,7 +165,23 @@ export default function VentasPage() {
                 <div className="crm-topbar">
                     <div>
                         <div className="topbar-sub">E-Commerce › Gestión de Ventas</div>
-                        <div className="topbar-title">Productos & Analytics</div>
+                        <div className="topbar-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            Productos & Analytics
+                            {refreshing && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--accent)', fontWeight: '500' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                        <polyline points="23 4 23 10 17 10"></polyline>
+                                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                    </svg>
+                                    Actualizando datos...
+                                </div>
+                            )}
+                            {!refreshing && lastUpdate && activeTab === 'analytics' && (
+                                <div style={{ fontSize: '12px', color: 'var(--text-3)', fontWeight: '400' }}>
+                                    Última actualización: {lastUpdate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </div>
+                            )}
+                        </div>
                     </div>
                     {activeTab === 'productos' && (
                         <div className="topbar-actions">
@@ -146,6 +190,22 @@ export default function VentasPage() {
                                     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                                 </svg>
                                 Nuevo Producto
+                            </button>
+                        </div>
+                    )}
+                    {activeTab === 'analytics' && (
+                        <div className="topbar-actions">
+                            <button 
+                                className="btn btn-white btn-sm" 
+                                onClick={() => fetchData()}
+                                disabled={refreshing}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                                {refreshing ? 'Actualizando...' : 'Actualizar Ahora'}
                             </button>
                         </div>
                     )}
