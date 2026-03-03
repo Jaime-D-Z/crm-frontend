@@ -56,6 +56,14 @@ export default function TiendaPage() {
     });
     const [processingPayment, setProcessingPayment] = useState(false);
     const [orderConfirmation, setOrderConfirmation] = useState(null);
+    
+    // Marketing Automation States
+    const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+    const [timeOnPage, setTimeOnPage] = useState(0);
+    const [subscribeEmail, setSubscribeEmail] = useState('');
+    const [subscribeNombre, setSubscribeNombre] = useState('');
+    const [cuponActivo, setCuponActivo] = useState(null);
+    const [productoConDescuento, setProductoConDescuento] = useState(null);
 
     useEffect(() => {
         fetchProductos();
@@ -66,7 +74,32 @@ export default function TiendaPage() {
         if (savedCart) {
             setCart(JSON.parse(savedCart));
         }
+
+        // Detectar cupón en URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const cuponCode = urlParams.get('cupon');
+        const productoId = urlParams.get('producto');
+        
+        if (cuponCode && productoId) {
+            validarCuponURL(cuponCode, productoId);
+        }
     }, []);
+
+    // Timer para modal de suscripción (5 minutos)
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setTimeOnPage(prev => prev + 1);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
+    // Mostrar modal después de 5 minutos
+    useEffect(() => {
+        if (timeOnPage === 300 && !localStorage.getItem('subscribed')) {
+            setShowSubscribeModal(true);
+        }
+    }, [timeOnPage]);
 
     const fetchProductos = async () => {
         try {
@@ -79,6 +112,86 @@ export default function TiendaPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Validar cupón desde URL
+    const validarCuponURL = async (codigo, productoId) => {
+        try {
+            const response = await axios.post(`${API_URL}/api/marketing/validar-cupon`, {
+                codigo,
+                producto_id: productoId,
+                ip: 'auto' // El backend detectará la IP
+            });
+
+            if (response.data.ok) {
+                setCuponActivo(response.data.cupon);
+                setProductoConDescuento(productoId);
+                
+                // Mostrar notificación
+                const descuento = response.data.cupon.tipo === 'porcentaje' 
+                    ? `${response.data.cupon.valor}%` 
+                    : `$${response.data.cupon.valor}`;
+                alert(`¡Cupón aplicado! Tienes ${descuento} de descuento`);
+            }
+        } catch (err) {
+            console.error('Error validando cupón:', err);
+            if (err.response?.data?.error) {
+                alert(err.response.data.error);
+            }
+        }
+    };
+
+    // Manejar suscripción
+    const handleSubscribe = async () => {
+        if (!subscribeEmail) {
+            alert('Por favor ingresa tu email');
+            return;
+        }
+
+        try {
+            await axios.post(`${API_URL}/api/marketing/suscribir`, {
+                email: subscribeEmail,
+                nombre: subscribeNombre || null,
+                session_id: getSessionId(),
+                origen: 'modal_5min'
+            });
+            
+            localStorage.setItem('subscribed', 'true');
+            setShowSubscribeModal(false);
+            alert('¡Gracias por suscribirte! Recibirás ofertas exclusivas en tu email.');
+            trackEvent('suscripcion_completada', null, { email: subscribeEmail });
+        } catch (err) {
+            console.error('Error al suscribirse:', err);
+            if (err.response?.data?.already_subscribed) {
+                localStorage.setItem('subscribed', 'true');
+                setShowSubscribeModal(false);
+                alert('Ya estás suscrito a nuestras ofertas');
+            } else {
+                alert('Error al suscribirse. Por favor intenta de nuevo.');
+            }
+        }
+    };
+
+    // Calcular precio con descuento
+    const calcularPrecioConDescuento = (producto) => {
+        if (!cuponActivo || productoConDescuento !== producto.id) {
+            return null;
+        }
+
+        const precioOriginal = parseFloat(producto.precio);
+        let precioFinal;
+
+        if (cuponActivo.tipo === 'porcentaje') {
+            precioFinal = precioOriginal * (1 - cuponActivo.valor / 100);
+        } else {
+            precioFinal = precioOriginal - cuponActivo.valor;
+        }
+
+        return {
+            original: precioOriginal,
+            final: Math.max(0, precioFinal),
+            descuento: cuponActivo.valor
+        };
     };
 
     const handleProductClick = (producto) => {
@@ -397,13 +510,18 @@ export default function TiendaPage() {
                             <p>No hay productos en esta categoria</p>
                         </div>
                     ) : (
-                        productosFiltrados.map(producto => (
+                        productosFiltrados.map(producto => {
+                            const precioDescuento = calcularPrecioConDescuento(producto);
+                            return (
                             <div 
                                 key={producto.id} 
                                 className="producto-card"
                             >
                                 {producto.destacado && (
                                     <div className="producto-badge">Destacado</div>
+                                )}
+                                {precioDescuento && (
+                                    <div className="producto-badge descuento">-{precioDescuento.descuento}%</div>
                                 )}
                                 <div className="producto-imagen" onClick={() => {
                                     trackEvent('producto_visto', producto.id);
@@ -429,7 +547,14 @@ export default function TiendaPage() {
                                         {producto.descripcion?.length > 80 ? '...' : ''}
                                     </p>
                                     <div className="producto-footer">
-                                        <div className="producto-precio">${producto.precio.toLocaleString()}</div>
+                                        {precioDescuento ? (
+                                            <div className="producto-precio-descuento">
+                                                <span className="precio-original">${precioDescuento.original.toFixed(2)}</span>
+                                                <span className="precio-final">${precioDescuento.final.toFixed(2)}</span>
+                                            </div>
+                                        ) : (
+                                            <div className="producto-precio">${producto.precio.toLocaleString()}</div>
+                                        )}
                                         <button 
                                             className="btn-add-cart"
                                             onClick={() => addToCart(producto)}
@@ -444,7 +569,7 @@ export default function TiendaPage() {
                                     </div>
                                 </div>
                             </div>
-                        ))
+                        )})
                     )}
                 </div>
             </section>
@@ -1076,6 +1201,53 @@ export default function TiendaPage() {
                     </div>
                 </div>
             </section>
+
+            {/* Modal de Suscripción (5 minutos) */}
+            {showSubscribeModal && (
+                <div className="modal-overlay-tienda" onClick={() => setShowSubscribeModal(false)}>
+                    <div className="modal-subscribe" onClick={(e) => e.stopPropagation()}>
+                        <button className="modal-close" onClick={() => setShowSubscribeModal(false)}>
+                            &times;
+                        </button>
+                        <div className="subscribe-icon">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </div>
+                        <h2 className="subscribe-title">¡Ofertas Exclusivas!</h2>
+                        <p className="subscribe-description">
+                            Suscríbete y recibe un <strong>10% de descuento</strong> en tu próxima compra
+                        </p>
+                        <div className="subscribe-form">
+                            <input
+                                type="text"
+                                placeholder="Tu nombre (opcional)"
+                                value={subscribeNombre}
+                                onChange={(e) => setSubscribeNombre(e.target.value)}
+                                className="subscribe-input"
+                            />
+                            <input
+                                type="email"
+                                placeholder="tu@email.com"
+                                value={subscribeEmail}
+                                onChange={(e) => setSubscribeEmail(e.target.value)}
+                                className="subscribe-input"
+                                required
+                            />
+                            <button onClick={handleSubscribe} className="btn-subscribe">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Suscribirme Ahora
+                            </button>
+                        </div>
+                        <p className="subscribe-note">
+                            No spam. Solo ofertas especiales y descuentos exclusivos.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <footer className="tienda-footer">
                 <p>&copy; 2026 CRM System. Todos los derechos reservados.</p>

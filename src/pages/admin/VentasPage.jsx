@@ -94,6 +94,37 @@ export default function VentasPage() {
         }
     };
 
+    const handleContactarCliente = async (cliente) => {
+        try {
+            showToast('Enviando cupón personalizado...', 'info');
+            
+            const response = await api.post('/api/marketing/enviar-cupon', {
+                ip: cliente.ip
+            });
+
+            if (response.data.sin_email) {
+                // No tiene email, mostrar cupón generado
+                const cupon = response.data.cupon;
+                showToast(
+                    `Cupón generado: ${cupon.codigo} - ${cupon.descuento}% en ${cupon.producto.nombre}. El cliente no tiene email registrado.`,
+                    'warning'
+                );
+            } else {
+                // Email enviado exitosamente
+                showToast(
+                    `Email enviado a ${response.data.destinatario} con cupón ${response.data.cupon.codigo}`,
+                    'success'
+                );
+            }
+        } catch (err) {
+            console.error('Error al contactar cliente:', err);
+            showToast(
+                err.response?.data?.error || 'Error al contactar cliente',
+                'error'
+            );
+        }
+    };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -659,9 +690,7 @@ export default function VentasPage() {
                                                             <td>
                                                                 <button 
                                                                     className="btn btn-sm btn-primary"
-                                                                    onClick={() => {
-                                                                        showToast(`Seguimiento iniciado para ${cliente.ip}`, 'info');
-                                                                    }}
+                                                                    onClick={() => handleContactarCliente(cliente)}
                                                                     style={{ fontSize: '11px', padding: '4px 8px' }}
                                                                 >
                                                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

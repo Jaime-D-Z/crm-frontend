@@ -1615,3 +1615,147 @@ html {
         break-inside: avoid;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* MODAL DE SUSCRIPCIÓN */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.modal-subscribe {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    animation: slideUp 0.3s ease-out;
+}
+
+.subscribe-icon {
+    margin-bottom: 20px;
+}
+
+.subscribe-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 12px;
+}
+
+.subscribe-description {
+    font-size: 16px;
+    color: #6b7280;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.subscribe-description strong {
+    color: #4f46e5;
+    font-weight: 700;
+}
+
+.subscribe-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.subscribe-input {
+    padding: 14px 18px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.subscribe-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.btn-subscribe {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-subscribe:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+}
+
+.subscribe-note {
+    font-size: 13px;
+    color: #9ca3af;
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* PRECIOS CON DESCUENTO */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.producto-badge.descuento {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    left: auto;
+}
+
+.producto-precio-descuento {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.producto-precio-descuento .precio-original {
+    font-size: 14px;
+    color: #9ca3af;
+    text-decoration: line-through;
+}
+
+.producto-precio-descuento .precio-final {
+    font-size: 22px;
+    font-weight: 700;
+    color: #10b981;
+}
+
+/* Animación para el modal */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modal-subscribe {
+        padding: 30px 20px;
+    }
+
+    .subscribe-title {
+        font-size: 24px;
+    }
+
+    .subscribe-description {
+        font-size: 14px;
+    }
+}
