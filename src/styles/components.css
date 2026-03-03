@@ -602,6 +602,13 @@
     font-size: 32px;
     min-width: 40px;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.funnel-icon svg {
+    color: white;
 }
 
 .funnel-info {

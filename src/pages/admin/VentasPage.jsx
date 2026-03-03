@@ -286,7 +286,7 @@ export default function VentasPage() {
                     {/* Tab: Analytics */}
                     {activeTab === 'analytics' && (
                         <>
-                            <div className="stats-grid">
+                            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
                                 <div className="stat-card">
                                     <div className="stat-label">Total Eventos</div>
                                     <div className="stat-value">{analyticsStats?.total_eventos || 0}</div>
@@ -301,6 +301,19 @@ export default function VentasPage() {
                                     <div className="stat-label">Vistas de Productos</div>
                                     <div className="stat-value">{analyticsStats?.vistas_producto || 0}</div>
                                     <div className="stat-sub">{analyticsStats?.productos_vistos || 0} productos únicos</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-label">Clientes Potenciales</div>
+                                    <div className="stat-value" style={{ color: '#f59e0b' }}>
+                                        {usuariosUnicos.filter(u => u.contactos === 0 && (u.productos_vistos >= 2 || u.total_eventos >= 5)).length}
+                                    </div>
+                                    <div className="stat-sub">🔥 Prospectos calientes</div>
+                                    <svg className="stat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
                                 </div>
                                 <div className="stat-card">
                                     <div className="stat-label">Tasa de Conversión</div>
@@ -366,6 +379,108 @@ export default function VentasPage() {
                                                         <td>{p.sesiones_unicas}</td>
                                                     </tr>
                                                 ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Clientes Potenciales */}
+                            <div className="section-card">
+                                <div className="section-header">
+                                    <div>
+                                        <div className="section-title">🎯 Clientes Potenciales</div>
+                                        <div className="section-subtitle">Usuarios con alto interés sin conversión</div>
+                                    </div>
+                                </div>
+                                <div className="section-body" style={{ padding: '0' }}>
+                                    <table className="crm-table">
+                                        <thead>
+                                            <tr>
+                                                <th>IP</th>
+                                                <th>Dispositivo</th>
+                                                <th>Interés</th>
+                                                <th>Productos Vistos</th>
+                                                <th>Última Actividad</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {usuariosUnicos.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="6">
+                                                        <div className="empty-state" style={{ padding: '60px 0' }}>
+                                                            <div style={{ color: 'var(--text-3)' }}>No hay clientes potenciales detectados</div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                usuariosUnicos
+                                                    .filter(u => u.contactos === 0 && (u.productos_vistos >= 2 || u.total_eventos >= 5))
+                                                    .map((usuario, idx) => {
+                                                        const nivelInteres = usuario.productos_vistos >= 5 ? 'Alto' : 
+                                                                           usuario.productos_vistos >= 3 ? 'Medio' : 'Bajo';
+                                                        const colorInteres = nivelInteres === 'Alto' ? '#ef4444' : 
+                                                                           nivelInteres === 'Medio' ? '#f59e0b' : '#10b981';
+                                                        return (
+                                                            <tr key={usuario.session_id}>
+                                                                <td>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                        <div style={{ 
+                                                                            width: '8px', 
+                                                                            height: '8px', 
+                                                                            borderRadius: '50%', 
+                                                                            background: colorInteres
+                                                                        }}></div>
+                                                                        <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '600' }}>{usuario.ip}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <span className={`badge ${
+                                                                        usuario.device_type === 'mobile' ? 'badge-blue' : 
+                                                                        usuario.device_type === 'tablet' ? 'badge-purple' : 
+                                                                        'badge-gray'
+                                                                    }`}>
+                                                                        {usuario.device_type}
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <span className={`badge ${
+                                                                        nivelInteres === 'Alto' ? 'badge-red' : 
+                                                                        nivelInteres === 'Medio' ? 'badge-orange' : 
+                                                                        'badge-green'
+                                                                    }`}>
+                                                                        {nivelInteres}
+                                                                    </span>
+                                                                </td>
+                                                                <td><span className="badge badge-purple">{usuario.productos_vistos}</span></td>
+                                                                <td style={{ fontSize: '12px', color: 'var(--text-2)' }}>
+                                                                    {new Date(usuario.ultima_actividad).toLocaleString('es', { 
+                                                                        day: '2-digit', 
+                                                                        month: 'short', 
+                                                                        hour: '2-digit', 
+                                                                        minute: '2-digit' 
+                                                                    })}
+                                                                </td>
+                                                                <td>
+                                                                    <span className="badge badge-orange">
+                                                                        🔥 Prospecto Caliente
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                            )}
+                                            {usuariosUnicos.filter(u => u.contactos === 0 && (u.productos_vistos >= 2 || u.total_eventos >= 5)).length === 0 && usuariosUnicos.length > 0 && (
+                                                <tr>
+                                                    <td colSpan="6">
+                                                        <div className="empty-state" style={{ padding: '40px 0' }}>
+                                                            <div style={{ color: 'var(--text-3)' }}>
+                                                                ✅ Todos los usuarios con interés han sido contactados
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
                                             )}
                                         </tbody>
                                     </table>
@@ -487,7 +602,13 @@ export default function VentasPage() {
                                             <div className="funnel-step">
                                                 <div className="funnel-bar" style={{ width: '100%', background: '#4f8ef7' }}>
                                                     <div className="funnel-content">
-                                                        <div className="funnel-icon">🛍️</div>
+                                                        <div className="funnel-icon">
+                                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <circle cx="9" cy="21" r="1"></circle>
+                                                                <circle cx="20" cy="21" r="1"></circle>
+                                                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                                            </svg>
+                                                        </div>
                                                         <div className="funnel-info">
                                                             <div className="funnel-label">Productos Agregados</div>
                                                             <div className="funnel-value">{checkoutFunnel.agregados_carrito}</div>
@@ -504,7 +625,12 @@ export default function VentasPage() {
                                                     background: '#8b5cf6'
                                                 }}>
                                                     <div className="funnel-content">
-                                                        <div className="funnel-icon">🚀</div>
+                                                        <div className="funnel-icon">
+                                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <circle cx="12" cy="12" r="10"></circle>
+                                                                <polyline points="12 6 12 12 16 14"></polyline>
+                                                            </svg>
+                                                        </div>
                                                         <div className="funnel-info">
                                                             <div className="funnel-label">Checkout Iniciado</div>
                                                             <div className="funnel-value">{checkoutFunnel.checkout_iniciado}</div>
@@ -521,7 +647,15 @@ export default function VentasPage() {
                                                     background: '#10b981'
                                                 }}>
                                                     <div className="funnel-content">
-                                                        <div className="funnel-icon">📝</div>
+                                                        <div className="funnel-icon">
+                                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                                <polyline points="10 9 9 9 8 9"></polyline>
+                                                            </svg>
+                                                        </div>
                                                         <div className="funnel-info">
                                                             <div className="funnel-label">Información Completada</div>
                                                             <div className="funnel-value">{checkoutFunnel.paso_1_completado}</div>
@@ -542,7 +676,12 @@ export default function VentasPage() {
                                                     background: '#059669'
                                                 }}>
                                                     <div className="funnel-content">
-                                                        <div className="funnel-icon">✅</div>
+                                                        <div className="funnel-icon">
+                                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                                            </svg>
+                                                        </div>
                                                         <div className="funnel-info">
                                                             <div className="funnel-label">Compras Completadas</div>
                                                             <div className="funnel-value">{checkoutFunnel.compras_completadas}</div>
@@ -559,7 +698,13 @@ export default function VentasPage() {
                                                     background: '#ef4444'
                                                 }}>
                                                     <div className="funnel-content">
-                                                        <div className="funnel-icon">❌</div>
+                                                        <div className="funnel-icon">
+                                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <circle cx="12" cy="12" r="10"></circle>
+                                                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                                                            </svg>
+                                                        </div>
                                                         <div className="funnel-info">
                                                             <div className="funnel-label">Checkout Abandonado</div>
                                                             <div className="funnel-value">{checkoutFunnel.checkout_abandonado}</div>
@@ -572,21 +717,36 @@ export default function VentasPage() {
                                         
                                         <div className="funnel-insights">
                                             <div className="insight-card">
-                                                <div className="insight-icon" style={{ background: '#10b981' }}>📈</div>
+                                                <div className="insight-icon" style={{ background: '#10b981' }}>
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                                        <polyline points="17 6 23 6 23 12"></polyline>
+                                                    </svg>
+                                                </div>
                                                 <div className="insight-content">
                                                     <div className="insight-label">Tasa de Conversión</div>
                                                     <div className="insight-value">{checkoutFunnel.tasa_completado}%</div>
                                                 </div>
                                             </div>
                                             <div className="insight-card">
-                                                <div className="insight-icon" style={{ background: '#ef4444' }}>📉</div>
+                                                <div className="insight-icon" style={{ background: '#ef4444' }}>
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                        <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                                                        <polyline points="17 18 23 18 23 12"></polyline>
+                                                    </svg>
+                                                </div>
                                                 <div className="insight-content">
                                                     <div className="insight-label">Tasa de Abandono</div>
                                                     <div className="insight-value">{checkoutFunnel.tasa_abandono}%</div>
                                                 </div>
                                             </div>
                                             <div className="insight-card">
-                                                <div className="insight-icon" style={{ background: '#4f8ef7' }}>💰</div>
+                                                <div className="insight-icon" style={{ background: '#4f8ef7' }}>
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                                    </svg>
+                                                </div>
                                                 <div className="insight-content">
                                                     <div className="insight-label">Oportunidades Perdidas</div>
                                                     <div className="insight-value">{checkoutFunnel.checkout_abandonado}</div>
