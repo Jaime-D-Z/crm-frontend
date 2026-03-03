@@ -568,7 +568,7 @@ export default function VentasPage() {
                                     <table className="crm-table">
                                         <thead>
                                             <tr>
-                                                <th>IP</th>
+                                                <th>Email / IP</th>
                                                 <th>Dispositivo</th>
                                                 <th>Lead Score</th>
                                                 <th>Nivel Interés</th>
@@ -628,9 +628,20 @@ export default function VentasPage() {
                                                                         borderRadius: '50%', 
                                                                         background: colorInteres
                                                                     }}></div>
-                                                                    <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '600' }}>
-                                                                        {cliente.ip}
-                                                                    </span>
+                                                                    {cliente.email ? (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#4f46e5' }}>
+                                                                                {cliente.email}
+                                                                            </span>
+                                                                            <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#6b7280' }}>
+                                                                                {cliente.ip}
+                                                                            </span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '600' }}>
+                                                                            {cliente.ip}
+                                                                        </span>
+                                                                    )}
                                                                     {idx < 3 && (
                                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" strokeWidth="2">
                                                                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
