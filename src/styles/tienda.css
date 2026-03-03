@@ -824,3 +824,528 @@
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   CHECKOUT MODAL - MODERN DESIGN
+   ══════════════════════════════════════════════════════════════ */
+
+.checkout-overlay {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+}
+
+.modal-checkout {
+    background: white;
+    border-radius: 20px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    animation: slideUp 0.3s;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.checkout-step {
+    padding: 40px;
+}
+
+.checkout-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 32px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.checkout-title svg {
+    color: #4f8ef7;
+}
+
+.checkout-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input,
+.form-group select {
+    padding: 12px 16px;
+    border: 2px solid #e1e4e8;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #4f8ef7;
+    box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.btn-next-step {
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s;
+    margin-top: 16px;
+}
+
+.btn-next-step:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-back {
+    padding: 8px 16px;
+    background: #f5f7fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    margin-bottom: 20px;
+    width: fit-content;
+}
+
+.btn-back:hover {
+    background: #e1e4e8;
+    color: #333;
+}
+
+/* ── Payment Methods ──────────────────────────────────────── */
+.payment-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.payment-method {
+    padding: 20px;
+    border: 2px solid #e1e4e8;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.payment-method input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.payment-method:hover {
+    border-color: #4f8ef7;
+    background: #f8faff;
+}
+
+.payment-method.active {
+    border-color: #4f8ef7;
+    background: linear-gradient(135deg, #f8faff 0%, #eff6ff 100%);
+    box-shadow: 0 4px 12px rgba(79, 142, 247, 0.2);
+}
+
+.payment-method svg {
+    color: #4f8ef7;
+}
+
+.payment-method span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* ── Order Summary ────────────────────────────────────────── */
+.order-summary {
+    background: #f8faff;
+    border: 2px solid #e1e4e8;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 24px 0;
+}
+
+.order-summary h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+    color: #333;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 15px;
+    color: #666;
+}
+
+.summary-line.total {
+    border-top: 2px solid #e1e4e8;
+    margin-top: 12px;
+    padding-top: 16px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.btn-process-payment {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s;
+    margin-top: 16px;
+}
+
+.btn-process-payment:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-process-payment:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spinner-small {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* ── Confirmation Step ────────────────────────────────────── */
+.checkout-step.confirmation {
+    text-align: center;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: scaleIn 0.5s;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+
+.success-icon svg {
+    color: white;
+}
+
+.success-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #10b981;
+    margin: 0 0 12px 0;
+}
+
+.success-message {
+    font-size: 16px;
+    color: #666;
+    margin: 0 0 32px 0;
+}
+
+.order-details {
+    background: #f8faff;
+    border: 2px solid #e1e4e8;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    text-align: left;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e1e4e8;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row span {
+    font-size: 14px;
+    color: #666;
+}
+
+.detail-row strong {
+    font-size: 16px;
+    color: #1a1a1a;
+}
+
+.detail-row code {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    background: #f5f7fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: #666;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.confirmation-note {
+    font-size: 14px;
+    color: #666;
+    margin: 0 0 24px 0;
+}
+
+.btn-continue-shopping {
+    padding: 16px 32px;
+    background: #4f8ef7;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-continue-shopping:hover {
+    background: #3d7ae0;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 142, 247, 0.4);
+}
+
+/* ── WhatsApp Alternative Button ──────────────────────────── */
+.btn-whatsapp-alt {
+    width: 100%;
+    padding: 12px;
+    background: white;
+    border: 2px solid #25D366;
+    border-radius: 8px;
+    color: #25D366;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+    margin-top: 12px;
+}
+
+.btn-whatsapp-alt:hover {
+    background: #25D366;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.cart-item-subtotal {
+    font-size: 14px;
+    color: #666;
+    margin-top: 4px;
+}
+
+/* ── Responsive Checkout ──────────────────────────────────── */
+@media (max-width: 768px) {
+    .modal-checkout {
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        max-height: 95vh;
+    }
+
+    .checkout-step {
+        padding: 24px;
+    }
+
+    .checkout-title {
+        font-size: 22px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-methods {
+        grid-template-columns: 1fr;
+    }
+
+    .success-title {
+        font-size: 24px;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MODERN ENHANCEMENTS
+   ══════════════════════════════════════════════════════════════ */
+
+/* Smooth scrollbar */
+.modal-checkout::-webkit-scrollbar,
+.cart-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-checkout::-webkit-scrollbar-track,
+.cart-body::-webkit-scrollbar-track {
+    background: #f5f7fa;
+}
+
+.modal-checkout::-webkit-scrollbar-thumb,
+.cart-body::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+.modal-checkout::-webkit-scrollbar-thumb:hover,
+.cart-body::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Glassmorphism effect for hero */
+.tienda-hero {
+    position: relative;
+    overflow: hidden;
+}
+
+.tienda-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.05)"/></svg>');
+    opacity: 0.3;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+/* Improved card hover effect */
+.producto-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.producto-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+.producto-card:hover::before {
+    left: 100%;
+}
+
+/* Pulse animation for cart badge */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.cart-badge {
+    animation: pulse 2s infinite;
+}
+
+/* Floating animation for success icon */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.success-icon {
+    animation: scaleIn 0.5s, float 3s ease-in-out 0.5s infinite;
+}

@@ -38,6 +38,24 @@ export default function TiendaPage() {
     const [showCart, setShowCart] = useState(false);
     const [cart, setCart] = useState([]);
     const [showContactForm, setShowContactForm] = useState(false);
+    const [showCheckout, setShowCheckout] = useState(false);
+    const [checkoutStep, setCheckoutStep] = useState(1); // 1: info, 2: pago, 3: confirmacion
+    const [checkoutData, setCheckoutData] = useState({
+        nombre: '',
+        email: '',
+        telefono: '',
+        direccion: '',
+        ciudad: '',
+        estado: '',
+        codigoPostal: '',
+        metodoPago: 'tarjeta_credito',
+        tarjetaNumero: '',
+        tarjetaNombre: '',
+        tarjetaExpiracion: '',
+        tarjetaCVV: ''
+    });
+    const [processingPayment, setProcessingPayment] = useState(false);
+    const [orderConfirmation, setOrderConfirmation] = useState(null);
 
     useEffect(() => {
         fetchProductos();
@@ -107,7 +125,100 @@ export default function TiendaPage() {
     };
 
     const getTotalCart = () => {
-        return cart.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+        return cart.reduce((total, item) => {
+            const precio = parseFloat(item.precio) || 0;
+            return total + (precio * item.cantidad);
+        }, 0);
+    };
+
+    const getSubtotal = () => getTotalCart();
+    const getImpuestos = () => getSubtotal() * 0.16; // IVA 16%
+    const getEnvio = () => getSubtotal() > 500 ? 0 : 99;
+    const getTotal = () => getSubtotal() + getImpuestos() + getEnvio();
+
+    const handleCheckoutClick = () => {
+        setShowCart(false);
+        setShowCheckout(true);
+        setCheckoutStep(1);
+    };
+
+    const handleCheckoutInputChange = (e) => {
+        const { name, value } = e.target;
+        setCheckoutData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const formatCardNumber = (value) => {
+        const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        const matches = v.match(/\d{4,16}/g);
+        const match = (matches && matches[0]) || '';
+        const parts = [];
+        for (let i = 0, len = match.length; i < len; i += 4) {
+            parts.push(match.substring(i, i + 4));
+        }
+        return parts.length ? parts.join(' ') : value;
+    };
+
+    const handleCardNumberChange = (e) => {
+        const formatted = formatCardNumber(e.target.value);
+        setCheckoutData(prev => ({ ...prev, tarjetaNumero: formatted }));
+    };
+
+    const handleProcessPayment = async () => {
+        // Validaciones
+        if (!checkoutData.nombre || !checkoutData.email) {
+            alert('Por favor completa todos los campos requeridos');
+            return;
+        }
+
+        if (checkoutData.metodoPago === 'tarjeta_credito' || checkoutData.metodoPago === 'tarjeta_debito') {
+            if (!checkoutData.tarjetaNumero || !checkoutData.tarjetaNombre || 
+                !checkoutData.tarjetaExpiracion || !checkoutData.tarjetaCVV) {
+                alert('Por favor completa los datos de la tarjeta');
+                return;
+            }
+        }
+
+        setProcessingPayment(true);
+
+        try {
+            const items = cart.map(item => ({
+                producto_id: item.id,
+                cantidad: item.cantidad
+            }));
+
+            const response = await axios.post(`${API_URL}/api/pedidos`, {
+                cliente_nombre: checkoutData.nombre,
+                cliente_email: checkoutData.email,
+                cliente_telefono: checkoutData.telefono,
+                direccion_calle: checkoutData.direccion,
+                direccion_ciudad: checkoutData.ciudad,
+                direccion_estado: checkoutData.estado,
+                direccion_codigo_postal: checkoutData.codigoPostal,
+                metodo_pago: checkoutData.metodoPago,
+                tarjeta_numero: checkoutData.tarjetaNumero.replace(/\s/g, ''),
+                tarjeta_nombre: checkoutData.tarjetaNombre,
+                tarjeta_expiracion: checkoutData.tarjetaExpiracion,
+                tarjeta_cvv: checkoutData.tarjetaCVV,
+                items,
+                session_id: getSessionId()
+            });
+
+            if (response.data.ok) {
+                setOrderConfirmation(response.data.pedido);
+                setCheckoutStep(3);
+                setCart([]);
+                localStorage.removeItem('tienda_cart');
+                trackEvent('compra_completada', null, { 
+                    numero_orden: response.data.pedido.numero_orden,
+                    total: response.data.pedido.total 
+                });
+            }
+        } catch (error) {
+            console.error('Error processing payment:', error);
+            alert(error.response?.data?.error || 'Error al procesar el pago. Por favor intenta de nuevo.');
+        } finally {
+            setProcessingPayment(false);
+        }
     };
 
     const handleContactClick = () => {
@@ -292,26 +403,31 @@ export default function TiendaPage() {
                             </div>
                         ) : (
                             <>
-                                {cart.map(item => (
-                                    <div key={item.id} className="cart-item">
-                                        <img src={item.imagen_url || '/placeholder.png'} alt={item.nombre} />
-                                        <div className="cart-item-info">
-                                            <div className="cart-item-name">{item.nombre}</div>
-                                            <div className="cart-item-price">${item.precio.toFixed(2)}</div>
-                                            <div className="cart-item-controls">
-                                                <button onClick={() => updateQuantity(item.id, item.cantidad - 1)}>-</button>
-                                                <span>{item.cantidad}</span>
-                                                <button onClick={() => updateQuantity(item.id, item.cantidad + 1)}>+</button>
+                                {cart.map(item => {
+                                    const precio = parseFloat(item.precio) || 0;
+                                    const subtotal = precio * item.cantidad;
+                                    return (
+                                        <div key={item.id} className="cart-item">
+                                            <img src={item.imagen_url || '/placeholder.png'} alt={item.nombre} />
+                                            <div className="cart-item-info">
+                                                <div className="cart-item-name">{item.nombre}</div>
+                                                <div className="cart-item-price">${precio.toFixed(2)}</div>
+                                                <div className="cart-item-controls">
+                                                    <button onClick={() => updateQuantity(item.id, item.cantidad - 1)}>-</button>
+                                                    <span>{item.cantidad}</span>
+                                                    <button onClick={() => updateQuantity(item.id, item.cantidad + 1)}>+</button>
+                                                </div>
+                                                <div className="cart-item-subtotal">${subtotal.toFixed(2)}</div>
                                             </div>
+                                            <button className="cart-item-remove" onClick={() => removeFromCart(item.id)}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                </svg>
+                                            </button>
                                         </div>
-                                        <button className="cart-item-remove" onClick={() => removeFromCart(item.id)}>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </>
                         )}
                     </div>
@@ -321,11 +437,18 @@ export default function TiendaPage() {
                                 <span>Total:</span>
                                 <span>${getTotalCart().toFixed(2)}</span>
                             </div>
-                            <button className="btn-checkout" onClick={handleWhatsAppContact}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <button className="btn-checkout" onClick={handleCheckoutClick}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                                </svg>
+                                Proceder al Pago
+                            </button>
+                            <button className="btn-whatsapp-alt" onClick={handleWhatsAppContact}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                                 </svg>
-                                Contactar por WhatsApp
+                                O contactar por WhatsApp
                             </button>
                         </div>
                     )}
@@ -410,6 +533,306 @@ export default function TiendaPage() {
                                 <span>Telefono</span>
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Checkout */}
+            {showCheckout && (
+                <div className="modal-overlay-tienda checkout-overlay" onClick={() => setShowCheckout(false)}>
+                    <div className="modal-checkout" onClick={(e) => e.stopPropagation()}>
+                        <button className="modal-close" onClick={() => setShowCheckout(false)}>&times;</button>
+                        
+                        {checkoutStep === 1 && (
+                            <div className="checkout-step">
+                                <h2 className="checkout-title">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    Información de Contacto
+                                </h2>
+                                <div className="checkout-form">
+                                    <div className="form-group">
+                                        <label>Nombre Completo *</label>
+                                        <input
+                                            type="text"
+                                            name="nombre"
+                                            value={checkoutData.nombre}
+                                            onChange={handleCheckoutInputChange}
+                                            placeholder="Juan Pérez"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Email *</label>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            value={checkoutData.email}
+                                            onChange={handleCheckoutInputChange}
+                                            placeholder="juan@example.com"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Teléfono</label>
+                                        <input
+                                            type="tel"
+                                            name="telefono"
+                                            value={checkoutData.telefono}
+                                            onChange={handleCheckoutInputChange}
+                                            placeholder="+52 55 1234 5678"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Dirección</label>
+                                        <input
+                                            type="text"
+                                            name="direccion"
+                                            value={checkoutData.direccion}
+                                            onChange={handleCheckoutInputChange}
+                                            placeholder="Calle y número"
+                                        />
+                                    </div>
+                                    <div className="form-row">
+                                        <div className="form-group">
+                                            <label>Ciudad</label>
+                                            <input
+                                                type="text"
+                                                name="ciudad"
+                                                value={checkoutData.ciudad}
+                                                onChange={handleCheckoutInputChange}
+                                                placeholder="Ciudad"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Estado</label>
+                                            <input
+                                                type="text"
+                                                name="estado"
+                                                value={checkoutData.estado}
+                                                onChange={handleCheckoutInputChange}
+                                                placeholder="Estado"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Código Postal</label>
+                                        <input
+                                            type="text"
+                                            name="codigoPostal"
+                                            value={checkoutData.codigoPostal}
+                                            onChange={handleCheckoutInputChange}
+                                            placeholder="06600"
+                                        />
+                                    </div>
+                                    <button className="btn-next-step" onClick={() => setCheckoutStep(2)}>
+                                        Continuar al Pago
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            <polyline points="12 5 19 12 12 19"></polyline>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {checkoutStep === 2 && (
+                            <div className="checkout-step">
+                                <button className="btn-back" onClick={() => setCheckoutStep(1)}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                                        <polyline points="12 19 5 12 12 5"></polyline>
+                                    </svg>
+                                    Volver
+                                </button>
+                                <h2 className="checkout-title">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                                    </svg>
+                                    Método de Pago
+                                </h2>
+                                
+                                <div className="payment-methods">
+                                    <label className={`payment-method ${checkoutData.metodoPago === 'tarjeta_credito' ? 'active' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="metodoPago"
+                                            value="tarjeta_credito"
+                                            checked={checkoutData.metodoPago === 'tarjeta_credito'}
+                                            onChange={handleCheckoutInputChange}
+                                        />
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                                        </svg>
+                                        <span>Tarjeta de Crédito</span>
+                                    </label>
+                                    <label className={`payment-method ${checkoutData.metodoPago === 'tarjeta_debito' ? 'active' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="metodoPago"
+                                            value="tarjeta_debito"
+                                            checked={checkoutData.metodoPago === 'tarjeta_debito'}
+                                            onChange={handleCheckoutInputChange}
+                                        />
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                                        </svg>
+                                        <span>Tarjeta de Débito</span>
+                                    </label>
+                                </div>
+
+                                {(checkoutData.metodoPago === 'tarjeta_credito' || checkoutData.metodoPago === 'tarjeta_debito') && (
+                                    <div className="checkout-form">
+                                        <div className="form-group">
+                                            <label>Número de Tarjeta *</label>
+                                            <input
+                                                type="text"
+                                                name="tarjetaNumero"
+                                                value={checkoutData.tarjetaNumero}
+                                                onChange={handleCardNumberChange}
+                                                placeholder="4242 4242 4242 4242"
+                                                maxLength="19"
+                                                required
+                                            />
+                                            <small className="form-hint">💳 Prueba: 4242 4242 4242 4242</small>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Nombre en la Tarjeta *</label>
+                                            <input
+                                                type="text"
+                                                name="tarjetaNombre"
+                                                value={checkoutData.tarjetaNombre}
+                                                onChange={handleCheckoutInputChange}
+                                                placeholder="JUAN PEREZ"
+                                                style={{ textTransform: 'uppercase' }}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label>Expiración *</label>
+                                                <input
+                                                    type="text"
+                                                    name="tarjetaExpiracion"
+                                                    value={checkoutData.tarjetaExpiracion}
+                                                    onChange={handleCheckoutInputChange}
+                                                    placeholder="MM/YY"
+                                                    maxLength="5"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>CVV *</label>
+                                                <input
+                                                    type="text"
+                                                    name="tarjetaCVV"
+                                                    value={checkoutData.tarjetaCVV}
+                                                    onChange={handleCheckoutInputChange}
+                                                    placeholder="123"
+                                                    maxLength="4"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="order-summary">
+                                    <h3>Resumen del Pedido</h3>
+                                    <div className="summary-line">
+                                        <span>Subtotal:</span>
+                                        <span>${getSubtotal().toFixed(2)}</span>
+                                    </div>
+                                    <div className="summary-line">
+                                        <span>Impuestos (16%):</span>
+                                        <span>${getImpuestos().toFixed(2)}</span>
+                                    </div>
+                                    <div className="summary-line">
+                                        <span>Envío:</span>
+                                        <span>{getEnvio() === 0 ? 'GRATIS' : `$${getEnvio().toFixed(2)}`}</span>
+                                    </div>
+                                    <div className="summary-line total">
+                                        <span>Total:</span>
+                                        <span>${getTotal().toFixed(2)}</span>
+                                    </div>
+                                </div>
+
+                                <button 
+                                    className="btn-process-payment" 
+                                    onClick={handleProcessPayment}
+                                    disabled={processingPayment}
+                                >
+                                    {processingPayment ? (
+                                        <>
+                                            <div className="spinner-small"></div>
+                                            Procesando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                            Pagar ${getTotal().toFixed(2)}
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
+
+                        {checkoutStep === 3 && orderConfirmation && (
+                            <div className="checkout-step confirmation">
+                                <div className="success-icon">
+                                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                </div>
+                                <h2 className="success-title">¡Pago Exitoso!</h2>
+                                <p className="success-message">
+                                    Tu pedido ha sido procesado correctamente
+                                </p>
+                                <div className="order-details">
+                                    <div className="detail-row">
+                                        <span>Número de Orden:</span>
+                                        <strong>{orderConfirmation.numero_orden}</strong>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span>Total Pagado:</span>
+                                        <strong>${orderConfirmation.total.toFixed(2)}</strong>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span>Estado:</span>
+                                        <span className="status-badge success">
+                                            {orderConfirmation.estado === 'pagado' ? 'Pagado' : orderConfirmation.estado}
+                                        </span>
+                                    </div>
+                                    {orderConfirmation.transaccion_id && (
+                                        <div className="detail-row">
+                                            <span>ID de Transacción:</span>
+                                            <code>{orderConfirmation.transaccion_id}</code>
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="confirmation-note">
+                                    📧 Recibirás un email de confirmación en breve
+                                </p>
+                                <button 
+                                    className="btn-continue-shopping" 
+                                    onClick={() => {
+                                        setShowCheckout(false);
+                                        setCheckoutStep(1);
+                                        setOrderConfirmation(null);
+                                    }}
+                                >
+                                    Continuar Comprando
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

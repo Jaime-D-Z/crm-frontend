@@ -414,13 +414,34 @@ export default function VentasPage() {
                                                             </div>
                                                         </td>
                                                         <td>
-                                                            <span className={`badge ${
-                                                                usuario.device_type === 'mobile' ? 'badge-blue' : 
-                                                                usuario.device_type === 'tablet' ? 'badge-purple' : 
-                                                                'badge-gray'
-                                                            }`}>
-                                                                {usuario.device_type}
-                                                            </span>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                {usuario.device_type === 'desktop' && (
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                                                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                                                                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                                                                    </svg>
+                                                                )}
+                                                                {usuario.device_type === 'mobile' && (
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                                                                        <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                                                                    </svg>
+                                                                )}
+                                                                {usuario.device_type === 'tablet' && (
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                                                                        <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                                                                    </svg>
+                                                                )}
+                                                                <span className={`badge ${
+                                                                    usuario.device_type === 'mobile' ? 'badge-blue' : 
+                                                                    usuario.device_type === 'tablet' ? 'badge-purple' : 
+                                                                    'badge-gray'
+                                                                }`}>
+                                                                    {usuario.device_type}
+                                                                </span>
+                                                            </div>
                                                         </td>
                                                         <td style={{ fontSize: '12px', color: 'var(--text-2)' }}>
                                                             {new Date(usuario.primera_visita).toLocaleString('es', { 
@@ -458,29 +479,39 @@ export default function VentasPage() {
                                         </div>
                                     </div>
                                     <div className="section-body">
-                                        <ResponsiveContainer width="100%" height={250}>
-                                            <PieChart>
-                                                <Pie
-                                                    data={[
-                                                        { name: 'Desktop', value: analyticsStats?.desktop || 0 },
-                                                        { name: 'Mobile', value: analyticsStats?.mobile || 0 },
-                                                        { name: 'Tablet', value: analyticsStats?.tablet || 0 }
-                                                    ]}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    labelLine={false}
-                                                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                                                    outerRadius={80}
-                                                    fill="#8884d8"
-                                                    dataKey="value"
-                                                >
-                                                    <Cell fill="#4f8ef7" />
-                                                    <Cell fill="#10b981" />
-                                                    <Cell fill="#f59e0b" />
-                                                </Pie>
-                                                <Tooltip />
-                                            </PieChart>
-                                        </ResponsiveContainer>
+                                        {analyticsStats && (analyticsStats.desktop > 0 || analyticsStats.mobile > 0 || analyticsStats.tablet > 0) ? (
+                                            <ResponsiveContainer width="100%" height={250}>
+                                                <PieChart>
+                                                    <Pie
+                                                        data={[
+                                                            { name: '💻 Desktop', value: parseInt(analyticsStats.desktop) || 0, color: '#4f8ef7' },
+                                                            { name: '📱 Mobile', value: parseInt(analyticsStats.mobile) || 0, color: '#10b981' },
+                                                            { name: '📱 Tablet', value: parseInt(analyticsStats.tablet) || 0, color: '#f59e0b' }
+                                                        ].filter(d => d.value > 0)}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        labelLine={false}
+                                                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                        outerRadius={80}
+                                                        fill="#8884d8"
+                                                        dataKey="value"
+                                                    >
+                                                        {[
+                                                            { name: '💻 Desktop', value: parseInt(analyticsStats.desktop) || 0, color: '#4f8ef7' },
+                                                            { name: '📱 Mobile', value: parseInt(analyticsStats.mobile) || 0, color: '#10b981' },
+                                                            { name: '📱 Tablet', value: parseInt(analyticsStats.tablet) || 0, color: '#f59e0b' }
+                                                        ].filter(d => d.value > 0).map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip formatter={(value) => `${value} eventos`} />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <div style={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)' }}>
+                                                No hay datos disponibles
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -493,15 +524,30 @@ export default function VentasPage() {
                                     <div className="section-body">
                                         <ResponsiveContainer width="100%" height={250}>
                                             <BarChart data={[
-                                                { name: 'Vistas', value: analyticsStats?.vistas_producto || 0 },
-                                                { name: 'Detalles', value: analyticsStats?.vistas_detalle || 0 },
-                                                { name: 'Contactos', value: analyticsStats?.clicks_contacto || 0 }
+                                                { name: '👀 Vistas', value: analyticsStats?.vistas_producto || 0, fill: '#4f8ef7' },
+                                                { name: '📄 Detalles', value: analyticsStats?.vistas_detalle || 0, fill: '#8b5cf6' },
+                                                { name: '📞 Contactos', value: analyticsStats?.clicks_contacto || 0, fill: '#10b981' }
                                             ]}>
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis dataKey="name" />
-                                                <YAxis />
-                                                <Tooltip />
-                                                <Bar dataKey="value" fill="#4f8ef7" />
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                                                <YAxis tick={{ fontSize: 12 }} />
+                                                <Tooltip 
+                                                    contentStyle={{ 
+                                                        background: 'white', 
+                                                        border: '1px solid #e5e7eb', 
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                                                    }}
+                                                />
+                                                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                                                    {[
+                                                        { name: '👀 Vistas', value: analyticsStats?.vistas_producto || 0, fill: '#4f8ef7' },
+                                                        { name: '📄 Detalles', value: analyticsStats?.vistas_detalle || 0, fill: '#8b5cf6' },
+                                                        { name: '📞 Contactos', value: analyticsStats?.clicks_contacto || 0, fill: '#10b981' }
+                                                    ].map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                                    ))}
+                                                </Bar>
                                             </BarChart>
                                         </ResponsiveContainer>
                                     </div>
