@@ -189,7 +189,7 @@ export default function VentasPage() {
                                 </div>
                                 <div className="stat-card">
                                     <div className="stat-label">Precio Promedio</div>
-                                    <div className="stat-value">${stats?.precio_promedio?.toFixed(2) || 0}</div>
+                                    <div className="stat-value">${stats?.precio_promedio ? parseFloat(stats.precio_promedio).toFixed(2) : '0.00'}</div>
                                     <div className="stat-sub">Por producto</div>
                                 </div>
                             </div>
