@@ -713,14 +713,14 @@ export default function VentasPage() {
                                 <div className="section-header">
                                     <div>
                                         <div className="section-title">Usuarios en Tiempo Real</div>
-                                        <div className="section-subtitle">Últimos 7 días - Identificación por IP</div>
+                                        <div className="section-subtitle">Últimos 7 días - Email o IP</div>
                                     </div>
                                 </div>
                                 <div className="section-body" style={{ padding: '0' }}>
                                     <table className="crm-table">
                                         <thead>
                                             <tr>
-                                                <th>IP</th>
+                                                <th>Email / IP</th>
                                                 <th>Dispositivo</th>
                                                 <th>Primera Visita</th>
                                                 <th>Última Actividad</th>
@@ -756,7 +756,20 @@ export default function VentasPage() {
                                                                     borderRadius: '50%', 
                                                                     background: idx === 0 ? '#10b981' : '#6b7280'
                                                                 }}></div>
-                                                                <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '600' }}>{usuario.ip}</span>
+                                                                {usuario.email ? (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#4f46e5' }}>
+                                                                            {usuario.email}
+                                                                        </span>
+                                                                        <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#6b7280' }}>
+                                                                            {usuario.ip}
+                                                                        </span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '600' }}>
+                                                                        {usuario.ip}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </td>
                                                         <td>

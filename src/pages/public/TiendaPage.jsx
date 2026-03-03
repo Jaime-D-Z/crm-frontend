@@ -294,7 +294,19 @@ export default function TiendaPage() {
     const getTotalCart = () => {
         return cart.reduce((total, item) => {
             const precio = parseFloat(item.precio) || 0;
-            return total + (precio * item.cantidad);
+            let precioFinal = precio;
+            
+            // Aplicar descuento si hay cupón activo para este producto
+            if (cuponActivo && productoConDescuento === item.id) {
+                if (cuponActivo.tipo === 'porcentaje') {
+                    precioFinal = precio * (1 - cuponActivo.valor / 100);
+                } else {
+                    precioFinal = precio - cuponActivo.valor;
+                }
+                precioFinal = Math.max(0, precioFinal);
+            }
+            
+            return total + (precioFinal * item.cantidad);
         }, 0);
     };
 
@@ -302,6 +314,27 @@ export default function TiendaPage() {
     const getImpuestos = () => getSubtotal() * 0.16; // IVA 16%
     const getEnvio = () => getSubtotal() > 500 ? 0 : 99;
     const getTotal = () => getSubtotal() + getImpuestos() + getEnvio();
+    
+    // Obtener descuento total aplicado
+    const getDescuentoTotal = () => {
+        if (!cuponActivo) return 0;
+        
+        return cart.reduce((descuento, item) => {
+            if (productoConDescuento === item.id) {
+                const precio = parseFloat(item.precio) || 0;
+                let descuentoItem = 0;
+                
+                if (cuponActivo.tipo === 'porcentaje') {
+                    descuentoItem = precio * (cuponActivo.valor / 100);
+                } else {
+                    descuentoItem = cuponActivo.valor;
+                }
+                
+                return descuento + (descuentoItem * item.cantidad);
+            }
+            return descuento;
+        }, 0);
+    };
 
     const handleCheckoutClick = () => {
         setShowCart(false);
@@ -1067,6 +1100,12 @@ export default function TiendaPage() {
                                         <span>Subtotal:</span>
                                         <span>${getSubtotal().toFixed(2)}</span>
                                     </div>
+                                    {cuponActivo && getDescuentoTotal() > 0 && (
+                                        <div className="summary-line descuento">
+                                            <span>Descuento ({cuponActivo.codigo}):</span>
+                                            <span style={{ color: '#10b981' }}>-${getDescuentoTotal().toFixed(2)}</span>
+                                        </div>
+                                    )}
                                     <div className="summary-line">
                                         <span>Impuestos (16%):</span>
                                         <span>${getImpuestos().toFixed(2)}</span>
