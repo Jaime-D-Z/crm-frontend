@@ -174,10 +174,18 @@ export default function VentasPage() {
                                     color: activeTab === 'analytics' ? 'var(--accent)' : 'var(--text-3)',
                                     fontWeight: activeTab === 'analytics' ? '600' : '500',
                                     borderBottom: activeTab === 'analytics' ? '2px solid var(--accent)' : '2px solid transparent',
-                                    fontSize: '14px'
+                                    fontSize: '14px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
                                 }}
                             >
-                                📊 Analytics de Ventas
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="12" y1="20" x2="12" y2="10"></line>
+                                    <line x1="18" y1="20" x2="18" y2="4"></line>
+                                    <line x1="6" y1="20" x2="6" y2="16"></line>
+                                </svg>
+                                Analytics de Ventas
                             </button>
                         </div>
                     </div>
@@ -316,9 +324,9 @@ export default function VentasPage() {
                                         {potencialesStats.total}
                                     </div>
                                     <div className="stat-sub">
-                                        🔴 {potencialesStats.por_nivel.alto} Alto | 
-                                        🟠 {potencialesStats.por_nivel.medio} Medio | 
-                                        🟢 {potencialesStats.por_nivel.bajo} Bajo
+                                        <span style={{ color: '#ef4444' }}>●</span> {potencialesStats.por_nivel.alto} Alto | 
+                                        <span style={{ color: '#f59e0b' }}>●</span> {potencialesStats.por_nivel.medio} Medio | 
+                                        <span style={{ color: '#10b981' }}>●</span> {potencialesStats.por_nivel.bajo} Bajo
                                     </div>
                                     <svg className="stat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
                                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -397,11 +405,71 @@ export default function VentasPage() {
                                 </div>
                             </div>
 
+                            {/* Tabla Explicativa de Lead Scoring */}
+                            <div className="section-card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', marginBottom: '24px' }}>
+                                <div className="section-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
+                                    <div>
+                                        <div className="section-title" style={{ color: 'white', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                            </svg>
+                                            ¿Qué es un Cliente Potencial?
+                                        </div>
+                                        <div className="section-subtitle" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                                            Sistema de puntuación automática basado en el comportamiento del usuario
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="section-body" style={{ padding: '24px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+                                        <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '12px', backdropFilter: 'blur(10px)' }}>
+                                            <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', opacity: 0.9 }}>Criterios de Detección</div>
+                                            <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', lineHeight: '1.8' }}>
+                                                <li>Sin contacto realizado</li>
+                                                <li>2+ productos vistos</li>
+                                                <li>O 5+ eventos totales</li>
+                                                <li>O vio detalles de productos</li>
+                                            </ul>
+                                        </div>
+                                        <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '12px', backdropFilter: 'blur(10px)' }}>
+                                            <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', opacity: 0.9 }}>Cálculo de Lead Score</div>
+                                            <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+                                                <div>Productos vistos × 10 pts</div>
+                                                <div>Detalles vistos × 15 pts</div>
+                                                <div>Agregados al carrito × 25 pts</div>
+                                                <div>Bonus actividad (hasta 20 pts)</div>
+                                            </div>
+                                        </div>
+                                        <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '12px', backdropFilter: 'blur(10px)' }}>
+                                            <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', opacity: 0.9 }}>Niveles de Interés</div>
+                                            <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+                                                <div><span style={{ color: '#ef4444' }}>●</span> Alto: Score ≥ 80 o 5+ productos</div>
+                                                <div><span style={{ color: '#f59e0b' }}>●</span> Medio: Score ≥ 40 o 3+ productos</div>
+                                                <div><span style={{ color: '#10b981' }}>●</span> Bajo: Score &lt; 40</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ background: 'rgba(255,255,255,0.15)', padding: '16px', borderRadius: '8px', fontSize: '13px', lineHeight: '1.6' }}>
+                                        <strong>Ejemplo:</strong> Usuario vio 5 productos (50 pts) + abrió detalles de 3 (45 pts) + agregó 1 al carrito (25 pts) + bonus (20 pts) = <strong>140 pts → Cliente de Alto Interés</strong>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Clientes Potenciales */}
                             <div className="section-card">
                                 <div className="section-header">
                                     <div>
-                                        <div className="section-title">🎯 Clientes Potenciales (Lead Scoring)</div>
+                                        <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="8.5" cy="7" r="4"></circle>
+                                                <line x1="20" y1="8" x2="20" y2="14"></line>
+                                                <line x1="23" y1="11" x2="17" y2="11"></line>
+                                            </svg>
+                                            Clientes Potenciales (Lead Scoring)
+                                        </div>
                                         <div className="section-subtitle">Usuarios con alto interés sin conversión - Ordenados por prioridad</div>
                                     </div>
                                 </div>
@@ -426,8 +494,25 @@ export default function VentasPage() {
                                                         <div className="empty-state" style={{ padding: '60px 0' }}>
                                                             <div style={{ color: 'var(--text-3)' }}>
                                                                 {usuariosUnicos.length === 0 
-                                                                    ? '📊 No hay datos de usuarios aún. Los clientes potenciales aparecerán cuando haya actividad en la tienda.'
-                                                                    : '✅ Todos los usuarios con interés han sido contactados o no cumplen los criterios mínimos.'
+                                                                    ? (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                                                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                                                                <line x1="12" y1="20" x2="12" y2="10"></line>
+                                                                                <line x1="18" y1="20" x2="18" y2="4"></line>
+                                                                                <line x1="6" y1="20" x2="6" y2="16"></line>
+                                                                            </svg>
+                                                                            <div>No hay datos de usuarios aún. Los clientes potenciales aparecerán cuando haya actividad en la tienda.</div>
+                                                                        </div>
+                                                                    )
+                                                                    : (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                                                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                                                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                                                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                                                            </svg>
+                                                                            <div>Todos los usuarios con interés han sido contactados o no cumplen los criterios mínimos.</div>
+                                                                        </div>
+                                                                    )
                                                                 }
                                                             </div>
                                                         </div>
@@ -455,7 +540,11 @@ export default function VentasPage() {
                                                                     <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '600' }}>
                                                                         {cliente.ip}
                                                                     </span>
-                                                                    {idx < 3 && <span style={{ fontSize: '10px' }}>🔥</span>}
+                                                                    {idx < 3 && (
+                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" strokeWidth="2">
+                                                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                                        </svg>
+                                                                    )}
                                                                 </div>
                                                             </td>
                                                             <td>
@@ -515,7 +604,10 @@ export default function VentasPage() {
                                                                     }}
                                                                     style={{ fontSize: '11px', padding: '4px 8px' }}
                                                                 >
-                                                                    📞 Contactar
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                                                    </svg>
+                                                                    Contactar
                                                                 </button>
                                                             </td>
                                                         </tr>
@@ -851,9 +943,9 @@ export default function VentasPage() {
                                     <div className="section-body">
                                         <ResponsiveContainer width="100%" height={250}>
                                             <BarChart data={[
-                                                { name: '👀 Vistas', value: analyticsStats?.vistas_producto || 0, fill: '#4f8ef7' },
-                                                { name: '📄 Detalles', value: analyticsStats?.vistas_detalle || 0, fill: '#8b5cf6' },
-                                                { name: '📞 Contactos', value: analyticsStats?.clicks_contacto || 0, fill: '#10b981' }
+                                                { name: 'Vistas', value: analyticsStats?.vistas_producto || 0, fill: '#4f8ef7' },
+                                                { name: 'Detalles', value: analyticsStats?.vistas_detalle || 0, fill: '#8b5cf6' },
+                                                { name: 'Contactos', value: analyticsStats?.clicks_contacto || 0, fill: '#10b981' }
                                             ]}>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                                                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
@@ -868,9 +960,9 @@ export default function VentasPage() {
                                                 />
                                                 <Bar dataKey="value" radius={[8, 8, 0, 0]}>
                                                     {[
-                                                        { name: '👀 Vistas', value: analyticsStats?.vistas_producto || 0, fill: '#4f8ef7' },
-                                                        { name: '📄 Detalles', value: analyticsStats?.vistas_detalle || 0, fill: '#8b5cf6' },
-                                                        { name: '📞 Contactos', value: analyticsStats?.clicks_contacto || 0, fill: '#10b981' }
+                                                        { name: 'Vistas', value: analyticsStats?.vistas_producto || 0, fill: '#4f8ef7' },
+                                                        { name: 'Detalles', value: analyticsStats?.vistas_detalle || 0, fill: '#8b5cf6' },
+                                                        { name: 'Contactos', value: analyticsStats?.clicks_contacto || 0, fill: '#10b981' }
                                                     ].map((entry, index) => (
                                                         <Cell key={`cell-${index}`} fill={entry.fill} />
                                                     ))}
