@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import api from '../../api/api';
 import { useToast } from '../../context/ToastContext';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
 export default function VentasPage() {
     const { showToast } = useToast();
@@ -10,6 +11,7 @@ export default function VentasPage() {
     const [stats, setStats] = useState(null);
     const [analyticsStats, setAnalyticsStats] = useState(null);
     const [topProductos, setTopProductos] = useState([]);
+    const [usuariosUnicos, setUsuariosUnicos] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
@@ -39,12 +41,14 @@ export default function VentasPage() {
                 setProductos(p.data.productos || []);
                 setStats(s.data.stats);
             } else {
-                const [a, t] = await Promise.all([
+                const [a, t, u] = await Promise.all([
                     api.get('/api/eventos/stats'),
-                    api.get('/api/eventos/top-productos?limit=10')
+                    api.get('/api/eventos/top-productos?limit=10'),
+                    api.get('/api/eventos/usuarios-unicos')
                 ]);
                 setAnalyticsStats(a.data.stats);
                 setTopProductos(t.data.productos || []);
+                setUsuariosUnicos(u.data.usuarios || []);
             }
         } catch (err) {
             console.error('Error loading data:', err);
@@ -365,21 +369,142 @@ export default function VentasPage() {
                                 </div>
                             </div>
 
-                            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                                <div className="stat-card">
-                                    <div className="stat-label">📱 Mobile</div>
-                                    <div className="stat-value">{analyticsStats?.mobile || 0}</div>
-                                    <div className="stat-sub">Visitas desde móvil</div>
+                            {/* Usuarios Únicos con IPs */}
+                            <div className="section-card">
+                                <div className="section-header">
+                                    <div>
+                                        <div className="section-title">Usuarios en Tiempo Real</div>
+                                        <div className="section-subtitle">Últimos 7 días - Identificación por IP</div>
+                                    </div>
                                 </div>
-                                <div className="stat-card">
-                                    <div className="stat-label">💻 Desktop</div>
-                                    <div className="stat-value">{analyticsStats?.desktop || 0}</div>
-                                    <div className="stat-sub">Visitas desde escritorio</div>
+                                <div className="section-body" style={{ padding: '0' }}>
+                                    <table className="crm-table">
+                                        <thead>
+                                            <tr>
+                                                <th>IP</th>
+                                                <th>Dispositivo</th>
+                                                <th>Primera Visita</th>
+                                                <th>Última Actividad</th>
+                                                <th>Eventos</th>
+                                                <th>Productos</th>
+                                                <th>Contactos</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {usuariosUnicos.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="7">
+                                                        <div className="empty-state" style={{ padding: '60px 0' }}>
+                                                            <div style={{ color: 'var(--text-3)' }}>No hay usuarios registrados aún</div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                usuariosUnicos.map((usuario, idx) => (
+                                                    <tr key={usuario.session_id}>
+                                                        <td>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <div style={{ 
+                                                                    width: '8px', 
+                                                                    height: '8px', 
+                                                                    borderRadius: '50%', 
+                                                                    background: idx === 0 ? '#10b981' : '#6b7280'
+                                                                }}></div>
+                                                                <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '600' }}>{usuario.ip}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span className={`badge ${
+                                                                usuario.device_type === 'mobile' ? 'badge-blue' : 
+                                                                usuario.device_type === 'tablet' ? 'badge-purple' : 
+                                                                'badge-gray'
+                                                            }`}>
+                                                                {usuario.device_type}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ fontSize: '12px', color: 'var(--text-2)' }}>
+                                                            {new Date(usuario.primera_visita).toLocaleString('es', { 
+                                                                day: '2-digit', 
+                                                                month: 'short', 
+                                                                hour: '2-digit', 
+                                                                minute: '2-digit' 
+                                                            })}
+                                                        </td>
+                                                        <td style={{ fontSize: '12px', color: 'var(--text-2)' }}>
+                                                            {new Date(usuario.ultima_actividad).toLocaleString('es', { 
+                                                                day: '2-digit', 
+                                                                month: 'short', 
+                                                                hour: '2-digit', 
+                                                                minute: '2-digit' 
+                                                            })}
+                                                        </td>
+                                                        <td><span className="badge badge-blue">{usuario.total_eventos}</span></td>
+                                                        <td><span className="badge badge-purple">{usuario.productos_vistos}</span></td>
+                                                        <td><span className="badge badge-green">{usuario.contactos}</span></td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div className="stat-card">
-                                    <div className="stat-label">📲 Tablet</div>
-                                    <div className="stat-value">{analyticsStats?.tablet || 0}</div>
-                                    <div className="stat-sub">Visitas desde tablet</div>
+                            </div>
+
+                            {/* Gráficos */}
+                            <div className="stats-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                                <div className="section-card">
+                                    <div className="section-header">
+                                        <div>
+                                            <div className="section-title">Distribución de Dispositivos</div>
+                                        </div>
+                                    </div>
+                                    <div className="section-body">
+                                        <ResponsiveContainer width="100%" height={250}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={[
+                                                        { name: 'Desktop', value: analyticsStats?.desktop || 0 },
+                                                        { name: 'Mobile', value: analyticsStats?.mobile || 0 },
+                                                        { name: 'Tablet', value: analyticsStats?.tablet || 0 }
+                                                    ]}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    labelLine={false}
+                                                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                                    outerRadius={80}
+                                                    fill="#8884d8"
+                                                    dataKey="value"
+                                                >
+                                                    <Cell fill="#4f8ef7" />
+                                                    <Cell fill="#10b981" />
+                                                    <Cell fill="#f59e0b" />
+                                                </Pie>
+                                                <Tooltip />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                <div className="section-card">
+                                    <div className="section-header">
+                                        <div>
+                                            <div className="section-title">Eventos por Tipo</div>
+                                        </div>
+                                    </div>
+                                    <div className="section-body">
+                                        <ResponsiveContainer width="100%" height={250}>
+                                            <BarChart data={[
+                                                { name: 'Vistas', value: analyticsStats?.vistas_producto || 0 },
+                                                { name: 'Detalles', value: analyticsStats?.vistas_detalle || 0 },
+                                                { name: 'Contactos', value: analyticsStats?.clicks_contacto || 0 }
+                                            ]}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="name" />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Bar dataKey="value" fill="#4f8ef7" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
                                 </div>
                             </div>
                         </>
