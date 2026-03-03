@@ -64,6 +64,13 @@ export default function TiendaPage() {
     const [subscribeNombre, setSubscribeNombre] = useState('');
     const [cuponActivo, setCuponActivo] = useState(null);
     const [productoConDescuento, setProductoConDescuento] = useState(null);
+    
+    // Debug: Mostrar tiempo en consola cada 10 segundos
+    useEffect(() => {
+        if (timeOnPage > 0 && timeOnPage % 10 === 0) {
+            console.log(`⏱️ Tiempo en página: ${timeOnPage}s (${Math.floor(timeOnPage / 60)}m ${timeOnPage % 60}s)`);
+        }
+    }, [timeOnPage]);
 
     useEffect(() => {
         fetchProductos();
@@ -85,18 +92,65 @@ export default function TiendaPage() {
         }
     }, []);
 
-    // Timer para modal de suscripción (5 minutos)
+    // Timer para modal de suscripción (5 minutos) con detección de visibilidad
     useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeOnPage(prev => prev + 1);
-        }, 1000);
+        // Recuperar tiempo acumulado de sessionStorage
+        const savedTime = parseInt(sessionStorage.getItem('tienda_time_on_page') || '0');
+        setTimeOnPage(savedTime);
 
-        return () => clearInterval(timer);
+        let timer;
+        let isPageVisible = !document.hidden;
+        let lastActivity = Date.now();
+
+        // Función para actualizar el timer
+        const updateTimer = () => {
+            const now = Date.now();
+            // Solo contar si la página es visible Y hubo actividad en los últimos 30 segundos
+            if (isPageVisible && (now - lastActivity < 30000)) {
+                setTimeOnPage(prev => {
+                    const newTime = prev + 1;
+                    sessionStorage.setItem('tienda_time_on_page', newTime.toString());
+                    return newTime;
+                });
+            }
+        };
+
+        // Detectar cambios de visibilidad (cambio de pestaña)
+        const handleVisibilityChange = () => {
+            isPageVisible = !document.hidden;
+            if (isPageVisible) {
+                lastActivity = Date.now(); // Resetear actividad al volver
+            }
+        };
+
+        // Detectar actividad del usuario
+        const handleActivity = () => {
+            lastActivity = Date.now();
+        };
+
+        // Iniciar timer
+        timer = setInterval(updateTimer, 1000);
+
+        // Agregar listeners
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        document.addEventListener('mousemove', handleActivity);
+        document.addEventListener('scroll', handleActivity);
+        document.addEventListener('click', handleActivity);
+        document.addEventListener('keypress', handleActivity);
+
+        return () => {
+            clearInterval(timer);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener('mousemove', handleActivity);
+            document.removeEventListener('scroll', handleActivity);
+            document.removeEventListener('click', handleActivity);
+            document.removeEventListener('keypress', handleActivity);
+        };
     }, []);
 
-    // Mostrar modal después de 5 minutos
+    // Mostrar modal después de 5 minutos (300 segundos)
     useEffect(() => {
-        if (timeOnPage === 300 && !localStorage.getItem('subscribed')) {
+        if (timeOnPage >= 300 && !localStorage.getItem('subscribed')) {
             setShowSubscribeModal(true);
         }
     }, [timeOnPage]);
@@ -403,6 +457,46 @@ export default function TiendaPage() {
                         <h1>Nuestra Tienda</h1>
                     </div>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        {/* Indicador de Timer (visible siempre para testing) */}
+                        <div style={{
+                            background: 'rgba(79, 70, 229, 0.1)',
+                            border: '1px solid rgba(79, 70, 229, 0.3)',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            color: '#4f46e5',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                        }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            {Math.floor(timeOnPage / 60)}:{(timeOnPage % 60).toString().padStart(2, '0')}
+                            {timeOnPage >= 300 ? ' ✅' : ` / 5:00`}
+                        </div>
+                        {/* Botón de testing para forzar modal */}
+                        <button 
+                            onClick={() => {
+                                localStorage.removeItem('subscribed');
+                                setShowSubscribeModal(true);
+                            }}
+                            style={{
+                                background: '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                fontWeight: '600'
+                            }}
+                            title="Forzar modal de suscripción (testing)"
+                        >
+                            🧪 Test Modal
+                        </button>
                         <button 
                             className="btn-cart"
                             onClick={() => setShowCart(!showCart)}

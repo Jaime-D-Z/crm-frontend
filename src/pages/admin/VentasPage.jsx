@@ -724,6 +724,7 @@ export default function VentasPage() {
                                                 <th>Dispositivo</th>
                                                 <th>Primera Visita</th>
                                                 <th>Última Actividad</th>
+                                                <th>Tiempo en Página</th>
                                                 <th>Eventos</th>
                                                 <th>Productos</th>
                                                 <th>Contactos</th>
@@ -732,14 +733,20 @@ export default function VentasPage() {
                                         <tbody>
                                             {usuariosUnicos.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan="7">
+                                                    <td colSpan="8">
                                                         <div className="empty-state" style={{ padding: '60px 0' }}>
                                                             <div style={{ color: 'var(--text-3)' }}>No hay usuarios registrados aún</div>
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ) : (
-                                                usuariosUnicos.map((usuario, idx) => (
+                                                usuariosUnicos.map((usuario, idx) => {
+                                                    const tiempoSegundos = usuario.tiempo_en_pagina_segundos || 0;
+                                                    const minutos = Math.floor(tiempoSegundos / 60);
+                                                    const segundos = tiempoSegundos % 60;
+                                                    const tiempoColor = tiempoSegundos >= 300 ? '#10b981' : tiempoSegundos >= 120 ? '#f59e0b' : '#6b7280';
+                                                    
+                                                    return (
                                                     <tr key={usuario.session_id}>
                                                         <td>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -798,11 +805,30 @@ export default function VentasPage() {
                                                                 minute: '2-digit' 
                                                             })}
                                                         </td>
+                                                        <td>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={tiempoColor} strokeWidth="2">
+                                                                    <circle cx="12" cy="12" r="10"></circle>
+                                                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                                                </svg>
+                                                                <span style={{ 
+                                                                    fontWeight: '600', 
+                                                                    fontSize: '13px',
+                                                                    color: tiempoColor
+                                                                }}>
+                                                                    {minutos > 0 ? `${minutos}m ${segundos}s` : `${segundos}s`}
+                                                                </span>
+                                                                {tiempoSegundos >= 300 && (
+                                                                    <span style={{ fontSize: '10px' }}>🔥</span>
+                                                                )}
+                                                            </div>
+                                                        </td>
                                                         <td><span className="badge badge-blue">{usuario.total_eventos}</span></td>
                                                         <td><span className="badge badge-purple">{usuario.productos_vistos}</span></td>
                                                         <td><span className="badge badge-green">{usuario.contactos}</span></td>
                                                     </tr>
-                                                ))
+                                                );
+                                                })
                                             )}
                                         </tbody>
                                     </table>
